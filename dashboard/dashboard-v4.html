@@ -1,0 +1,480 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>Hello AI Hackathon — 참가팀 운영 대시보드 (ver4)</title>
+<meta name="description" content="Hello AI Hackathon 참가팀 진행 상태·제출 현황·심사 결과 운영 대시보드." />
+<link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'%3E%3Crect width='100' height='100' rx='24' fill='%23171717'/%3E%3Ctext x='50' y='52' font-family='sans-serif' font-size='56' font-weight='800' fill='%23fafafa' text-anchor='middle' dominant-baseline='central'%3EH%3C/text%3E%3C/svg%3E">
+<!-- avoid FOUC on dark: set theme before paint -->
+<script>
+  (function () {
+    var t = localStorage.getItem('theme');
+    if (!t) t = matchMedia('(prefers-color-scheme: dark)').matches ? 'dark' : 'light';
+    document.documentElement.classList.toggle('dark', t === 'dark');
+  })();
+</script>
+<script src="https://cdn.tailwindcss.com"></script>
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/gh/orioncactus/pretendard/dist/web/static/pretendard.min.css">
+<link href="https://fonts.googleapis.com/css2?family=Figtree:wght@400;500;600;700;800&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
+<script src="https://code.iconify.design/iconify-icon/2.3.0/iconify-icon.min.js"></script>
+<script>
+  tailwind.config = {
+    darkMode: 'class',
+    theme: {
+      extend: {
+        // Neutral theme (src/themes/neutral) — colors resolve to CSS vars that
+        // swap under .dark, so most utilities are theme-aware without dark: variants.
+        fontFamily: {
+          sans: ['Figtree', 'Pretendard', 'system-ui', 'sans-serif'],
+          mono: ['"JetBrains Mono"', 'ui-monospace', 'monospace'],
+        },
+        colors: {
+          body:     'var(--bg-body)',
+          surface:  'var(--bg-surface)',
+          card:     'var(--bg-card)',
+          muted:    'var(--bg-muted)',
+          primary:  'var(--text-primary)',
+          secondary:'var(--text-secondary)',
+          disabled: 'var(--text-disabled)',
+          accent:   'var(--accent)',
+          accentmut:'var(--accent-muted)',
+          onaccent: 'var(--on-accent)',
+          line:     'var(--border)',
+          lineHi:   'var(--border-emphasized)',
+        },
+        borderRadius: {
+          inner: '0.375rem', element: '0.625rem', container: '0.75rem', page: '1.75rem',
+        },
+        boxShadow: {
+          low:  'var(--shadow-low)',
+          med:  'var(--shadow-med)',
+          high: 'var(--shadow-high)',
+        },
+      },
+    },
+  }
+</script>
+<style>
+  /* ===== Neutral theme tokens (OKLCH grayscale spine + categorical hues) ===== */
+  :root {
+    color-scheme: light;
+    --bg-body: #f1f1f1; --bg-surface: #ffffff; --bg-card: #ffffff; --bg-muted: #f1f1f1;
+    --text-primary: #171717; --text-secondary: #737373; --text-disabled: #a3a3a3;
+    --accent: #262626; --accent-muted: #f1f1f1; --on-accent: #ffffff;
+    --border: #ebebeb; --border-emphasized: #d4d4d4;
+    --success: #007004;
+    --shadow-low: 0 2px 4px rgba(0,0,0,.05), 0 4px 8px rgba(0,0,0,.10);
+    --shadow-med: 0 2px 4px rgba(0,0,0,.05), 0 4px 12px rgba(0,0,0,.10);
+    --shadow-high: 0 4px 6px rgba(0,0,0,.10), 0 12px 24px rgba(0,0,0,.15);
+    /* categorical: bg / text / dot(icon) */
+    --gray-bg:#e5e5e5;   --gray-tx:#262626;   --gray-dot:#525252;
+    --blue-bg:#c4ddfb;   --blue-tx:#00458c;   --blue-dot:#00458c;
+    --red-bg:#facecb;    --red-tx:#89001a;    --red-dot:#89001a;
+    --cyan-bg:#a3e0ef;   --cyan-tx:#00505f;   --cyan-dot:#00505f;
+    --teal-bg:#a5e3d6;   --teal-tx:#005348;   --teal-dot:#005348;
+    --yellow-bg:#f8da9d; --yellow-tx:#584400; --yellow-dot:#584400;
+    --purple-bg:#eccef3; --purple-tx:#700084; --purple-dot:#700084;
+  }
+  .dark {
+    color-scheme: dark;
+    --bg-body: #1b1b1b; --bg-surface: #262626; --bg-card: #1b1b1b; --bg-muted: #1b1b1b;
+    --text-primary: #fafafa; --text-secondary: #a3a3a3; --text-disabled: #525252;
+    --accent: #ebebeb; --accent-muted: #262626; --on-accent: #171717;
+    --border: rgba(255,255,255,.10); --border-emphasized: #525252;
+    --success: #9fe59b;
+    /* dark: deepened drops + all-around 1px white inset bezel (Figma-style lift) */
+    --shadow-low:  0 2px 4px rgba(0,0,0,.25), 0 4px 8px rgba(0,0,0,.40), inset 0 0 0 1px rgba(255,255,255,.08);
+    --shadow-med:  0 2px 4px rgba(0,0,0,.35), 0 4px 12px rgba(0,0,0,.50), inset 0 0 0 1px rgba(255,255,255,.12);
+    --shadow-high: 0 4px 6px rgba(0,0,0,.50), 0 12px 24px rgba(0,0,0,.70), inset 0 0 0 1px rgba(255,255,255,.15);
+    /* categorical inverts: hue-tinted alpha bg + light pastel text */
+    --gray-bg:rgba(255,255,255,.10); --gray-tx:#e5e5e5;   --gray-dot:#a3a3a3;
+    --blue-bg:rgba(158,183,255,.24); --blue-tx:#c7d3ff;   --blue-dot:#9eb7ff;
+    --red-bg:rgba(255,158,151,.24);  --red-tx:#ffc6c1;    --red-dot:#ff9e97;
+    --cyan-bg:rgba(131,194,212,.24); --cyan-tx:#9edef0;   --cyan-dot:#83c2d4;
+    --teal-bg:rgba(126,198,184,.24); --teal-tx:#99e2d3;   --teal-dot:#7ec6b8;
+    --yellow-bg:rgba(222,180,51,.24);--yellow-tx:#fdcf4f; --yellow-dot:#deb433;
+    --purple-bg:rgba(242,151,255,.24);--purple-tx:#fac1ff;--purple-dot:#f297ff;
+  }
+  body { word-break: keep-all; }
+  .mono { font-family: 'JetBrains Mono', ui-monospace, monospace; }
+
+  /* thin scrollbar (list) */
+  .scroll-y { scrollbar-width: thin; scrollbar-color: var(--border-emphasized) transparent; }
+  .scroll-y::-webkit-scrollbar { width: 8px; height: 8px; }
+  .scroll-y::-webkit-scrollbar-thumb { background: var(--border-emphasized); border-radius: 999px; }
+  .scroll-y::-webkit-scrollbar-track { background: transparent; }
+
+  /* reveal cascade — transform only, disabled under reduced-motion */
+  @keyframes fadeUp { from { opacity: 0; transform: translateY(16px); } to { opacity: 1; transform: translateY(0); } }
+  .reveal { animation: fadeUp .5s cubic-bezier(.16,1,.3,1) both; animation-delay: var(--d, 0ms); }
+  @keyframes pulseDot { 0%,100% { opacity: 1; transform: scale(1); } 50% { opacity: .5; transform: scale(1.3); } }
+  .pulse-dot { animation: pulseDot 2s ease-in-out infinite; }
+  @media (prefers-reduced-motion: reduce) {
+    .reveal { animation: none; }
+    .pulse-dot { animation: none !important; }
+    * { scroll-behavior: auto !important; }
+  }
+</style>
+</head>
+<body class="min-h-[100dvh] bg-body text-secondary font-sans antialiased selection:bg-accent/20">
+
+<!-- ============ NAV ============ -->
+<header class="sticky top-0 z-40 border-b border-line bg-surface/85 backdrop-blur-xl">
+  <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 h-16 flex items-center justify-between gap-4">
+    <div class="flex items-center gap-3">
+      <div class="w-9 h-9 rounded-container bg-accent text-onaccent grid place-items-center font-extrabold text-lg shadow-low">H</div>
+      <div class="leading-tight">
+        <div class="font-bold text-[15px] text-primary">Hello AI Hackathon</div>
+        <div class="mono text-[11px] text-secondary">운영 대시보드 · 2026</div>
+      </div>
+    </div>
+    <div class="flex items-center gap-2">
+      <button id="themeBtn" aria-label="테마 전환" class="w-10 h-10 grid place-items-center rounded-full border border-line bg-card text-secondary hover:text-primary hover:border-lineHi transition-colors">
+        <iconify-icon icon="solar:sun-2-linear" class="text-lg block dark:hidden"></iconify-icon>
+        <iconify-icon icon="solar:moon-linear" class="text-lg hidden dark:block"></iconify-icon>
+      </button>
+      <button id="searchBtn" aria-label="검색으로 이동" class="w-10 h-10 grid place-items-center rounded-full border border-line bg-card text-secondary hover:text-primary hover:border-lineHi transition-colors">
+        <iconify-icon icon="solar:magnifer-linear" class="text-lg"></iconify-icon>
+      </button>
+      <div class="w-10 h-10 rounded-full bg-accentmut border border-line text-primary grid place-items-center font-bold text-sm" title="People팀">P</div>
+    </div>
+  </div>
+</header>
+
+<main class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+
+  <!-- ============ GREETING ============ -->
+  <section class="reveal flex flex-wrap items-end justify-between gap-4 mb-8">
+    <div>
+      <h1 class="text-3xl md:text-4xl font-extrabold tracking-tight text-primary leading-tight">참가팀 운영 현황</h1>
+      <p class="mt-2 text-secondary max-w-[60ch]">Hello AI Hackathon 참가팀의 진행 상태·제출 현황·심사 결과를 한눈에 확인하세요.</p>
+    </div>
+    <div class="mono text-[12px] text-secondary shrink-0" id="lastUpdated"></div>
+  </section>
+
+  <!-- ============ KPI METRICS ============ -->
+  <section class="grid grid-cols-2 lg:grid-cols-4 gap-4 mb-6" id="kpis"></section>
+
+  <!-- ============ CONTROLS ============ -->
+  <section class="reveal bg-card border border-line rounded-container shadow-low p-4 mb-4" style="--d:120ms">
+    <div class="flex flex-wrap items-center gap-3">
+      <label class="flex items-center gap-2 bg-surface border border-line rounded-full px-4 py-2.5 min-w-[240px] focus-within:border-lineHi focus-within:ring-2 focus-within:ring-accent/15 transition">
+        <iconify-icon icon="solar:magnifer-linear" class="text-secondary text-base"></iconify-icon>
+        <input id="search" type="text" aria-label="팀 검색" placeholder="팀명 · 팀장 · 소속 · 프로젝트 검색"
+          class="bg-transparent outline-none text-sm text-primary placeholder:text-disabled w-full" />
+      </label>
+      <div class="flex flex-wrap gap-2" id="statusChips"></div>
+      <div class="flex-1"></div>
+      <select id="trackFilter" class="bg-surface border border-line rounded-full pl-4 pr-3 py-2.5 text-sm text-secondary hover:border-lineHi cursor-pointer"></select>
+      <select id="sortSelect" class="bg-surface border border-line rounded-full pl-4 pr-3 py-2.5 text-sm text-secondary hover:border-lineHi cursor-pointer">
+        <option value="id-asc">번호순</option>
+        <option value="name-asc">팀명 (가나다)</option>
+        <option value="members-desc">인원 많은순</option>
+        <option value="status-asc">진행 단계순</option>
+        <option value="score-desc">점수 높은순</option>
+        <option value="updated-desc">최근 업데이트순</option>
+      </select>
+    </div>
+  </section>
+
+  <!-- ============ RESULT META ============ -->
+  <div class="mono text-[12px] text-secondary px-1 mb-3" id="resultMeta"></div>
+
+  <!-- ============ TABLE ============ -->
+  <section class="reveal bg-card border border-line rounded-container shadow-low overflow-hidden" style="--d:180ms">
+    <div class="scroll-y overflow-auto max-h-[62dvh]">
+      <table class="w-full border-collapse min-w-[1000px]">
+        <thead>
+          <tr class="text-left text-[11px] uppercase tracking-wider text-secondary [&_th]:font-bold [&_th]:px-4 [&_th]:py-3.5 [&_th]:bg-card [&_th]:sticky [&_th]:top-0 [&_th]:z-10 [&_th]:border-b [&_th]:border-line [&_th]:whitespace-nowrap">
+            <th class="text-right w-14">No.</th>
+            <th class="sortable cursor-pointer hover:text-primary" data-key="name">팀 <span class="arrow text-primary"></span></th>
+            <th class="sortable cursor-pointer hover:text-primary" data-key="org">소속 <span class="arrow text-primary"></span></th>
+            <th>팀장</th>
+            <th class="sortable cursor-pointer hover:text-primary text-right" data-key="members">인원 <span class="arrow text-primary"></span></th>
+            <th class="sortable cursor-pointer hover:text-primary" data-key="track">트랙 <span class="arrow text-primary"></span></th>
+            <th class="sortable cursor-pointer hover:text-primary" data-key="status">진행상태 <span class="arrow text-primary"></span></th>
+            <th class="text-center">제출</th>
+            <th class="sortable cursor-pointer hover:text-primary text-right" data-key="score">점수 <span class="arrow text-primary"></span></th>
+            <th>수상</th>
+            <th class="sortable cursor-pointer hover:text-primary" data-key="updated">업데이트 <span class="arrow text-primary"></span></th>
+            <th></th>
+          </tr>
+        </thead>
+        <tbody id="tbody"></tbody>
+      </table>
+    </div>
+  </section>
+
+  <!-- ============ FOOTER ============ -->
+  <footer class="mt-8 flex flex-wrap justify-between gap-3 mono text-[11px] text-disabled px-1">
+    <span>© 2026 Samsung Electronics System LSI · People Team</span>
+    <span>Hello AI Hackathon 운영 대시보드 ver4 · neutral theme</span>
+  </footer>
+</main>
+
+<!-- ============ DETAIL PANEL ============ -->
+<div class="overlay fixed inset-0 z-50 bg-black/40 backdrop-blur-sm opacity-0 pointer-events-none transition-opacity duration-200" id="overlay"></div>
+<aside id="panel" role="dialog" aria-modal="true" aria-labelledby="pName"
+  class="fixed top-0 right-0 h-full w-[560px] max-w-[94vw] z-[55] flex flex-col
+         bg-surface border-l border-line shadow-high
+         translate-x-full transition-transform duration-300 [transition-timing-function:cubic-bezier(.32,.72,0,1)]">
+  <div class="relative px-7 pt-6 pb-5 border-b border-line">
+    <button id="panelClose" aria-label="닫기"
+      class="absolute top-5 right-6 w-9 h-9 grid place-items-center rounded-element border border-line bg-card text-secondary hover:text-primary hover:border-lineHi transition">
+      <iconify-icon icon="solar:close-circle-linear" class="text-xl"></iconify-icon>
+    </button>
+    <div class="mono text-[12px] text-secondary mb-1.5" id="pPid"></div>
+    <h2 class="text-2xl font-extrabold tracking-tight text-primary pr-12" id="pName"></h2>
+    <div class="flex flex-wrap gap-2 mt-3.5" id="pTags"></div>
+  </div>
+  <div class="scroll-y flex-1 min-h-0 overflow-y-auto px-7 py-6" id="panelBody"></div>
+</aside>
+
+<!-- ============ DATA ============ -->
+<script src="teams.js"></script>
+<!-- ============ APP ============ -->
+<script>
+(function () {
+  const TEAMS = (window.AXC_TEAMS || []).slice();
+  const STATUS_ORDER = ["접수완료", "선정중", "미선정", "과제 진행", "제출완료", "본선 심사", "결선 심사"];
+
+  // 상태 → 카테고리컬 hue (neutral theme categorical palette; light pastel / dark tinted).
+  const STATUS_HUE = {
+    "접수완료": "gray", "선정중": "blue", "미선정": "red", "과제 진행": "cyan",
+    "제출완료": "teal", "본선 심사": "yellow", "결선 심사": "purple",
+  };
+  const pill = (s) => {
+    const h = STATUS_HUE[s] || "gray";
+    const pulse = s === "결선 심사" ? " pulse-dot" : "";
+    return `<span class="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-xs font-semibold"
+      style="background:var(--${h}-bg);color:var(--${h}-tx)">
+      <span class="w-1.5 h-1.5 rounded-full${pulse}" style="background:var(--${h}-dot)"></span>${s}</span>`;
+  };
+  const trackBadge = (t) => `<span class="inline-flex px-2.5 py-1 rounded-full text-xs font-medium bg-muted border border-line text-secondary">${t}</span>`;
+  const awardBadge = (a) => `<span class="inline-flex px-2.5 py-1 rounded-full text-xs font-bold bg-accent text-onaccent">${a}</span>`;
+
+  const KPI_ICON = {
+    teams: "solar:widget-5-bold-duotone",
+    people: "solar:users-group-rounded-bold-duotone",
+    rate: "solar:cloud-upload-bold-duotone",
+    review: "solar:medal-ribbons-star-bold-duotone",
+  };
+
+  // ---- state ----
+  let activeStatus = "all", searchText = "", activeTrack = "all", sortKey = "id", sortDir = "asc";
+  const $ = (s) => document.querySelector(s);
+
+  // ---- theme toggle ----
+  $("#themeBtn").addEventListener("click", () => {
+    const dark = document.documentElement.classList.toggle("dark");
+    localStorage.setItem("theme", dark ? "dark" : "light");
+  });
+
+  // ---- KPI ----
+  function renderKpis() {
+    const total = TEAMS.length;
+    const people = TEAMS.reduce((s, t) => s + t.members, 0);
+    const submitted = TEAMS.filter(t => t.submitted).length;
+    const rate = total ? Math.round((submitted / total) * 100) : 0;
+    const reviewing = TEAMS.filter(t => t.status === "본선 심사" || t.status === "결선 심사").length;
+    const kpis = [
+      { icon: KPI_ICON.teams,  v: total,     u: "",  title: "전체 팀",      sub: "등록 완료" },
+      { icon: KPI_ICON.people, v: people,    u: "명", title: "총 참가 인원", sub: "전 팀 합산" },
+      { icon: KPI_ICON.rate,   v: rate,      u: "%", title: "제출 완료율",  sub: `${submitted}/${total}팀 제출` },
+      { icon: KPI_ICON.review, v: reviewing, u: "팀", title: "심사 진행중",  sub: "본선 + 결선" },
+    ];
+    $("#kpis").innerHTML = kpis.map((k, i) => `
+      <div class="reveal bg-card border border-line rounded-container shadow-low p-5 flex flex-col gap-4" style="--d:${i * 70}ms">
+        <div class="flex items-center gap-3">
+          <span class="w-11 h-11 rounded-element bg-accentmut text-primary grid place-items-center">
+            <iconify-icon icon="${k.icon}" class="text-2xl"></iconify-icon>
+          </span>
+          <span class="text-sm font-medium text-secondary">${k.title}</span>
+        </div>
+        <div>
+          <div class="text-3xl font-extrabold tracking-tight text-primary leading-none">${k.v}<span class="text-base font-bold text-secondary ml-0.5">${k.u}</span></div>
+          <div class="mono text-[12px] text-secondary mt-2">${k.sub}</div>
+        </div>
+      </div>`).join("");
+  }
+
+  // ---- track options ----
+  function renderTrackOptions() {
+    const tracks = [...new Set(TEAMS.map(t => t.track))];
+    $("#trackFilter").innerHTML = `<option value="all">전체 트랙</option>` + tracks.map(tr => `<option value="${tr}">${tr}</option>`).join("");
+  }
+
+  // ---- filter/base ----
+  function baseFiltered() {
+    return TEAMS.filter(t => {
+      if (activeTrack !== "all" && t.track !== activeTrack) return false;
+      if (searchText) {
+        const q = searchText.toLowerCase();
+        const hay = [t.name, t.leader, t.org, t.project, t.id, t.track, t.memberList.map(m => m.name).join(" ")].join(" ").toLowerCase();
+        if (!hay.includes(q)) return false;
+      }
+      return true;
+    });
+  }
+
+  function renderStatusChips() {
+    const base = baseFiltered();
+    const counts = {};
+    STATUS_ORDER.forEach(s => counts[s] = 0);
+    base.forEach(t => counts[t.status]++);
+    const chips = [{ key: "all", label: "전체", n: base.length }].concat(STATUS_ORDER.map(s => ({ key: s, label: s, n: counts[s] })));
+    $("#statusChips").innerHTML = chips.map(c => {
+      const on = activeStatus === c.key;
+      return `<button data-status="${c.key}" class="inline-flex items-center gap-1.5 px-3.5 py-2 rounded-full text-[13px] font-semibold transition
+        ${on ? "bg-accent text-onaccent border border-transparent shadow-low" : "bg-card text-secondary border border-line hover:text-primary hover:border-lineHi"}">
+        ${c.label} <span class="mono text-[11px] ${on ? "opacity-70" : "text-disabled"}">${c.n}</span></button>`;
+    }).join("");
+    $("#statusChips").querySelectorAll("button").forEach(btn => {
+      btn.addEventListener("click", () => { activeStatus = btn.dataset.status; render(); });
+    });
+  }
+
+  function currentRows() {
+    let rows = baseFiltered();
+    if (activeStatus !== "all") rows = rows.filter(t => t.status === activeStatus);
+    const dir = sortDir === "asc" ? 1 : -1;
+    rows.sort((a, b) => {
+      let av, bv;
+      if (sortKey === "status") { av = STATUS_ORDER.indexOf(a.status); bv = STATUS_ORDER.indexOf(b.status); }
+      else if (sortKey === "score") { av = a.score == null ? -1 : a.score; bv = b.score == null ? -1 : b.score; }
+      else if (sortKey === "members") { av = a.members; bv = b.members; }
+      else { av = a[sortKey]; bv = b[sortKey]; }
+      if (typeof av === "string") return av.localeCompare(bv, "ko") * dir;
+      return (av - bv) * dir;
+    });
+    return rows;
+  }
+
+  const fmtDate = (iso) => iso.replaceAll("-", ".").slice(2);
+
+  function renderTable() {
+    const rows = currentRows();
+    $("#resultMeta").innerHTML = `전체 <b class="text-primary font-semibold">${TEAMS.length}</b>팀 중 <b class="text-primary font-semibold">${rows.length}</b>팀 표시`;
+    const tb = $("#tbody");
+    if (!rows.length) {
+      tb.innerHTML = `<tr><td colspan="12"><div class="py-16 text-center text-disabled">조건에 맞는 팀이 없습니다.</div></td></tr>`;
+      return;
+    }
+    tb.innerHTML = rows.map((t, i) => `
+      <tr data-id="${t.id}" role="button" tabindex="0" aria-label="${t.name} 상세 보기"
+        class="group cursor-pointer border-b border-line last:border-0 hover:bg-accentmut focus:bg-accentmut outline-none transition-colors [&>td]:px-4 [&>td]:py-3.5 [&>td]:align-middle text-sm text-secondary">
+        <td class="text-right"><span class="mono text-[13px] text-disabled">${i + 1}</span></td>
+        <td><div class="mono text-[11px] text-disabled">${t.id}</div><div class="font-bold text-primary">${t.name}</div></td>
+        <td>${t.org}</td>
+        <td>${t.leader}</td>
+        <td class="text-right"><span class="mono text-[13px] text-primary">${t.members}</span></td>
+        <td>${trackBadge(t.track)}</td>
+        <td>${pill(t.status)}</td>
+        <td class="text-center">${t.submitted ? '<iconify-icon icon="solar:check-circle-bold" class="text-lg" style="color:var(--success)"></iconify-icon>' : '<span class="text-disabled">–</span>'}</td>
+        <td class="text-right">${t.score == null ? '<span class="text-disabled">–</span>' : `<span class="mono text-[13px] text-primary">${t.score}</span>`}</td>
+        <td>${t.award ? awardBadge(t.award) : '<span class="text-disabled">–</span>'}</td>
+        <td><span class="mono text-[13px] text-disabled">${fmtDate(t.updated)}</span></td>
+        <td><span class="text-primary font-semibold text-[13px] whitespace-nowrap inline-flex items-center gap-1 group-hover:gap-1.5 transition-all">상세 <iconify-icon icon="solar:arrow-right-linear"></iconify-icon></span></td>
+      </tr>`).join("");
+    tb.querySelectorAll("tr[data-id]").forEach(tr => {
+      tr.addEventListener("click", () => openPanel(tr.dataset.id));
+      tr.addEventListener("keydown", (e) => { if (e.key === "Enter" || e.key === " ") { e.preventDefault(); openPanel(tr.dataset.id); } });
+    });
+  }
+
+  function updateSortHeaders() {
+    document.querySelectorAll("thead th.sortable").forEach(th => {
+      const arrow = th.querySelector(".arrow");
+      if (th.dataset.key === sortKey) { arrow.textContent = sortDir === "asc" ? "▲" : "▼"; th.setAttribute("aria-sort", sortDir === "asc" ? "ascending" : "descending"); }
+      else { arrow.textContent = ""; th.removeAttribute("aria-sort"); }
+    });
+  }
+  const syncSortSelect = () => { $("#sortSelect").value = `${sortKey}-${sortDir}`; };
+
+  function render() { renderStatusChips(); renderTable(); updateSortHeaders(); syncSortSelect(); }
+
+  // ---- detail panel ----
+  let lastFocused = null;
+  function openPanel(id) {
+    const t = TEAMS.find(x => x.id === id);
+    if (!t) return;
+    lastFocused = document.activeElement;
+    $("#pPid").textContent = t.id;
+    $("#pName").textContent = t.name;
+    $("#pTags").innerHTML = pill(t.status) + trackBadge(t.track) + (t.award ? awardBadge(t.award) : "");
+    const kv = [
+      ["소속", t.org, false], ["팀장", t.leader, false], ["인원", `${t.members}명`, true],
+      ["제출 여부", t.submitted ? "제출 완료" : "미제출", false],
+      ["심사 점수", t.score == null ? "미확정" : `${t.score} 점`, true],
+      ["최근 업데이트", t.updated, true],
+    ].map(([k, v, mono]) => `<div class="bg-muted border border-line rounded-element px-4 py-3">
+        <div class="text-[11px] uppercase tracking-wide text-secondary font-semibold mb-1.5">${k}</div>
+        <div class="text-[15px] font-bold text-primary ${mono ? "mono !text-[14px]" : ""}">${v}</div></div>`).join("");
+    const members = t.memberList.map((m, i) => `
+      <div class="flex items-center justify-between rounded-element px-4 py-3 border ${i === 0 ? "bg-accentmut border-lineHi" : "bg-muted border-line"}">
+        <span class="text-sm font-bold text-primary">${i === 0 ? "★ " : ""}${m.name}</span>
+        <span class="text-[11px] font-semibold px-2.5 py-1 rounded-full ${i === 0 ? "bg-accent text-onaccent" : "bg-muted border border-line text-secondary"}">${m.role}</span>
+      </div>`).join("");
+    const secTitle = (s, first) => `<div class="text-[11px] uppercase tracking-wider text-secondary font-bold mb-3 ${first ? "" : "mt-7 pt-5 border-t border-line"}">${s}</div>`;
+    $("#panelBody").innerHTML = `
+      ${secTitle("팀 소개", true)}
+      <p class="text-sm text-secondary leading-relaxed">${t.intro}</p>
+      <div class="grid grid-cols-2 gap-2.5 mt-4">${kv}</div>
+      ${secTitle("프로젝트")}
+      <div class="text-base font-bold text-primary mb-1.5">${t.project}</div>
+      <p class="text-sm text-secondary leading-relaxed">${t.desc}</p>
+      ${secTitle(`팀원 명단 (${t.members}명)`)}
+      <div class="flex flex-col gap-2">${members}</div>
+      ${secTitle("제출물")}
+      <a href="${t.repo}" target="_blank" rel="noopener"
+        class="flex items-center justify-center gap-2 w-full px-6 py-3.5 rounded-element bg-accent text-onaccent font-bold text-sm
+               shadow-low hover:scale-[1.02] active:scale-[0.98] transition-transform [transition-timing-function:cubic-bezier(.16,1,.3,1)]">
+        <iconify-icon icon="solar:square-top-down-linear" class="text-lg"></iconify-icon> 제출물 열기
+      </a>
+      <div class="mono text-[12px] text-secondary mt-2.5 break-all">${t.repo}</div>`;
+    $("#overlay").classList.remove("opacity-0", "pointer-events-none");
+    $("#panel").classList.remove("translate-x-full");
+    $("#panelClose").focus();
+  }
+  function closePanel() {
+    if ($("#panel").classList.contains("translate-x-full")) return;
+    $("#overlay").classList.add("opacity-0", "pointer-events-none");
+    $("#panel").classList.add("translate-x-full");
+    if (lastFocused) { lastFocused.focus(); lastFocused = null; }
+  }
+
+  // ---- events ----
+  $("#search").addEventListener("input", (e) => { searchText = e.target.value.trim(); render(); });
+  $("#trackFilter").addEventListener("change", (e) => { activeTrack = e.target.value; render(); });
+  $("#sortSelect").addEventListener("change", (e) => { const [k, d] = e.target.value.split("-"); sortKey = k; sortDir = d; render(); });
+  document.querySelectorAll("thead th.sortable").forEach(th => {
+    th.setAttribute("tabindex", "0");
+    const doSort = () => {
+      const key = th.dataset.key;
+      if (sortKey === key) sortDir = sortDir === "asc" ? "desc" : "asc";
+      else { sortKey = key; sortDir = (key === "score" || key === "members" || key === "updated") ? "desc" : "asc"; }
+      render();
+    };
+    th.addEventListener("click", doSort);
+    th.addEventListener("keydown", (e) => { if (e.key === "Enter" || e.key === " ") { e.preventDefault(); doSort(); } });
+  });
+  $("#searchBtn").addEventListener("click", () => { const s = $("#search"); s.scrollIntoView({ block: "center", behavior: "smooth" }); s.focus(); });
+  $("#panelClose").addEventListener("click", closePanel);
+  $("#overlay").addEventListener("click", closePanel);
+  document.addEventListener("keydown", (e) => { if (e.key === "Escape") closePanel(); });
+
+  // ---- init ----
+  if (!TEAMS.length) {
+    $("#tbody").innerHTML = `<tr><td colspan="12"><div class="py-16 text-center text-disabled">teams.js 데이터를 불러오지 못했습니다. dashboard-v4.html 과 같은 폴더에 teams.js 를 두세요.</div></td></tr>`;
+  } else {
+    const latest = TEAMS.reduce((m, t) => t.updated > m ? t.updated : m, TEAMS[0].updated);
+    $("#lastUpdated").textContent = `Last updated: ${latest}`;
+    renderKpis();
+    renderTrackOptions();
+    render();
+  }
+})();
+</script>
+</body>
+</html>

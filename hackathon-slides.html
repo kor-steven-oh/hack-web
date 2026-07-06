@@ -1,0 +1,362 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>사내 해커톤 2026 — 행사 소개</title>
+<style>
+@import url('https://cdn.jsdelivr.net/gh/orioncactus/pretendard/dist/web/static/pretendard.css');
+@import url('https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@400;500;600;700&family=Space+Mono:wght@400;700&display=swap');
+
+:root {
+  --ink: #0B1020;          /* deep navy ground */
+  --ink-2: #0E1428;        /* raised surface */
+  --line: #1C2540;         /* hairline */
+  --line-2: #2A3556;       /* stronger hairline */
+  --paper: #EDEEF2;        /* primary text */
+  --paper-dim: #A8AFC4;    /* secondary text */
+  --paper-mute: #6B7290;   /* tertiary / captions */
+  --signal: #C7F154;       /* single accent — terminal lime */
+  --signal-dim: #8FA83A;
+  --font-display: 'Space Grotesk', 'Pretendard', sans-serif;
+  --font-body: 'Pretendard', -apple-system, BlinkMacSystemFont, sans-serif;
+  --font-mono: 'Space Mono', ui-monospace, 'SF Mono', Menlo, monospace;
+
+  --s1: 8px; --s2: 16px; --s3: 24px; --s4: 40px; --s5: 64px; --s6: 96px;
+}
+
+* { margin: 0; padding: 0; box-sizing: border-box; }
+html { -webkit-font-smoothing: antialiased; text-rendering: optimizeLegibility; }
+body {
+  background: var(--ink);
+  color: var(--paper);
+  font-family: var(--font-body);
+  overflow: hidden;
+}
+
+.slide-deck { position: relative; width: 100vw; height: 100vh; overflow: hidden; }
+@media (min-width: 769px) {
+  .slide-deck {
+    max-width: calc(100vh * 16 / 9);
+    max-height: calc(100vw * 9 / 16);
+    margin: auto; position: absolute; inset: 0;
+    border-left: 1px solid var(--line);
+    border-right: 1px solid var(--line);
+  }
+}
+
+/* subtle technical grid — replaces decorative blobs */
+.slide::before {
+  content: ""; position: absolute; inset: 0; z-index: 0; pointer-events: none;
+  background-image:
+    linear-gradient(var(--line) 1px, transparent 1px),
+    linear-gradient(90deg, var(--line) 1px, transparent 1px);
+  background-size: 64px 64px;
+  opacity: .28;
+  -webkit-mask-image: radial-gradient(120% 90% at 15% 0%, #000 30%, transparent 78%);
+          mask-image: radial-gradient(120% 90% at 15% 0%, #000 30%, transparent 78%);
+}
+
+.slide {
+  position: absolute; inset: 0;
+  display: flex; flex-direction: column;
+  padding: var(--s5) var(--s5) var(--s6);
+  opacity: 0; visibility: hidden;
+  transition: opacity .4s ease;
+  background: var(--ink);
+  overflow: hidden;
+}
+.slide.active { opacity: 1; visibility: visible; }
+
+/* running header + footer (frame the deck like a report) */
+.frame-top, .frame-bot {
+  position: absolute; left: var(--s5); right: var(--s5); z-index: 3;
+  display: flex; justify-content: space-between; align-items: center;
+  font-family: var(--font-mono); font-size: 11px; letter-spacing: .14em;
+  text-transform: uppercase; color: var(--paper-mute);
+}
+.frame-top { top: var(--s3); }
+.frame-bot { bottom: var(--s3); }
+.frame-top::after, .frame-bot::before {
+  content: ""; position: absolute; left: 0; right: 0; height: 1px; background: var(--line);
+}
+.frame-top::after { bottom: -12px; }
+.frame-bot::before { top: -12px; }
+.frame-brand { color: var(--paper-dim); }
+.frame-brand b { color: var(--paper); font-weight: 700; }
+
+/* content column — LEFT anchored, asymmetric */
+.slide-content {
+  position: relative; z-index: 2;
+  flex: 1; display: flex; flex-direction: column; justify-content: center;
+  max-width: 940px;
+}
+
+/* section comment label — the signature build-log motif */
+.tag {
+  font-family: var(--font-mono); font-size: 13px; letter-spacing: .04em;
+  color: var(--signal); margin-bottom: var(--s3);
+}
+.tag .car { color: var(--paper-mute); }
+
+/* type scale */
+h1, h2, h3 { font-family: var(--font-display); font-weight: 600; letter-spacing: -.02em; line-height: 1.05; }
+.display {
+  font-size: clamp(44px, 7.2vw, 104px); font-weight: 700; letter-spacing: -.035em;
+  line-height: .98;
+}
+.display .u { color: var(--signal); }
+.section-h { font-size: clamp(30px, 4.4vw, 60px); font-weight: 600; letter-spacing: -.028em; }
+.section-h .u { color: var(--signal); }
+.lead {
+  font-size: clamp(16px, 1.9vw, 21px); color: var(--paper-dim); font-weight: 400;
+  line-height: 1.62; max-width: 640px; margin-top: var(--s3); letter-spacing: -.005em;
+}
+.mono-cap { font-family: var(--font-mono); font-size: 12px; letter-spacing: .1em; color: var(--paper-mute); text-transform: uppercase; }
+
+/* title meta grid — mono data rows */
+.meta-grid { margin-top: var(--s5); display: grid; grid-template-columns: repeat(3, minmax(0,1fr)); border-top: 1px solid var(--line); max-width: 780px; }
+.meta-cell { padding: var(--s2) var(--s3) var(--s2) 0; border-right: 1px solid var(--line); }
+.meta-cell:last-child { border-right: 0; }
+.meta-cell .k { font-family: var(--font-mono); font-size: 11px; letter-spacing: .12em; text-transform: uppercase; color: var(--paper-mute); }
+.meta-cell .v { font-family: var(--font-display); font-size: clamp(15px,1.7vw,19px); font-weight: 500; margin-top: 6px; color: var(--paper); }
+
+/* feature rows — not cards; hairline-divided list, index-numbered */
+.rows { margin-top: var(--s4); border-top: 1px solid var(--line); }
+.row {
+  display: grid; grid-template-columns: 56px 1fr; gap: var(--s3);
+  padding: var(--s3) 0; border-bottom: 1px solid var(--line); align-items: baseline;
+}
+.row .idx { font-family: var(--font-mono); font-size: 13px; color: var(--signal); padding-top: 4px; }
+.row h3 { font-size: clamp(19px, 2.1vw, 26px); font-weight: 600; }
+.row p { color: var(--paper-dim); font-size: clamp(14px,1.6vw,16px); line-height: 1.55; margin-top: 8px; max-width: 620px; }
+
+/* timeline — a log stream */
+.log { margin-top: var(--s4); border-left: 1px solid var(--line-2); padding-left: var(--s4); display: flex; flex-direction: column; gap: var(--s3); }
+.log-item { position: relative; display: grid; grid-template-columns: 168px 1fr; gap: var(--s3); align-items: baseline; }
+.log-item::before {
+  content: ""; position: absolute; left: calc(-1 * var(--s4) - 1px); top: 9px;
+  width: 9px; height: 9px; border-radius: 50%; background: var(--ink); border: 1.5px solid var(--line-2);
+}
+.log-item.hot::before { background: var(--signal); border-color: var(--signal); box-shadow: 0 0 0 4px rgba(199,241,84,.14); }
+.log-time { font-family: var(--font-mono); font-size: clamp(13px,1.5vw,15px); color: var(--signal); letter-spacing: .02em; }
+.log-time .d { color: var(--paper-mute); }
+.log-body h3 { font-size: clamp(17px,1.9vw,22px); font-weight: 600; }
+.log-body p { color: var(--paper-dim); font-size: clamp(13px,1.5vw,15px); margin-top: 4px; }
+
+/* awards — ledger table, right-aligned figures, mono numerals */
+.ledger { margin-top: var(--s4); border-top: 1px solid var(--line-2); }
+.ledger-row {
+  display: grid; grid-template-columns: 1fr auto; gap: var(--s3); align-items: center;
+  padding: var(--s3) 0; border-bottom: 1px solid var(--line);
+}
+.ledger-row .lhs { display: flex; align-items: baseline; gap: var(--s2); }
+.ledger-row .rank { font-family: var(--font-display); font-size: clamp(18px,2vw,24px); font-weight: 600; }
+.ledger-row .note { color: var(--paper-mute); font-size: clamp(13px,1.5vw,15px); }
+.ledger-row.lead-row .rank { color: var(--signal); }
+.ledger-row .amt { font-family: var(--font-mono); font-size: clamp(20px,2.4vw,30px); font-weight: 700; letter-spacing: -.02em; font-variant-numeric: tabular-nums; }
+.ledger-row.lead-row .amt { color: var(--signal); }
+.perks { margin-top: var(--s4); display: flex; flex-wrap: wrap; gap: var(--s2); }
+.perk {
+  font-family: var(--font-mono); font-size: 13px; letter-spacing: .02em; color: var(--paper-dim);
+  border: 1px solid var(--line-2); border-radius: 3px; padding: 8px 14px;
+}
+.perk::before { content: "+ "; color: var(--signal); }
+
+/* CTA */
+.cta-actions { margin-top: var(--s4); display: flex; align-items: center; gap: var(--s4); flex-wrap: wrap; }
+.btn {
+  display: inline-flex; align-items: center; gap: 12px;
+  font-family: var(--font-mono); font-weight: 700; font-size: clamp(14px,1.7vw,16px); letter-spacing: .04em;
+  background: var(--signal); color: #0A0E1A;
+  padding: 16px 28px; border-radius: 4px; border: none; cursor: pointer;
+  transition: transform .18s ease, box-shadow .18s ease;
+}
+.btn:hover { transform: translateY(-2px); box-shadow: 0 12px 30px -12px rgba(199,241,84,.5); }
+.btn svg { width: 18px; height: 18px; stroke: currentColor; fill: none; stroke-width: 2.4; }
+.cta-url { font-family: var(--font-mono); font-size: clamp(13px,1.6vw,16px); color: var(--paper-dim); letter-spacing: .02em; }
+.cta-url .p { color: var(--signal); }
+
+/* blinking caret for signature */
+.blink { display: inline-block; width: .62em; height: 1.05em; background: var(--signal); transform: translateY(.14em); margin-left: 2px; animation: blink 1.1s steps(2, start) infinite; }
+@keyframes blink { 0%,50%{opacity:1} 50.01%,100%{opacity:0} }
+
+/* entrance — single staged fade-up on active slide */
+.slide.active .stagger > * { opacity: 0; animation: fadeUp .55s cubic-bezier(.2,.7,.2,1) forwards; }
+.slide.active .stagger > *:nth-child(1){animation-delay:.04s}
+.slide.active .stagger > *:nth-child(2){animation-delay:.11s}
+.slide.active .stagger > *:nth-child(3){animation-delay:.18s}
+.slide.active .stagger > *:nth-child(4){animation-delay:.25s}
+.slide.active .stagger > *:nth-child(5){animation-delay:.32s}
+@keyframes fadeUp { from{opacity:0; transform:translateY(18px)} to{opacity:1; transform:translateY(0)} }
+
+/* nav */
+.progress-bar { position: fixed; top: 0; left: 0; height: 2px; background: var(--signal); transition: width .35s ease; z-index: 1000; }
+.nav-controls {
+  position: fixed; bottom: 20px; right: 24px;
+  display: flex; align-items: center; gap: 14px; z-index: 1000;
+  font-family: var(--font-mono);
+}
+.nav-btn {
+  background: transparent; border: 1px solid var(--line-2); color: var(--paper);
+  width: 38px; height: 38px; border-radius: 4px; cursor: pointer; font-size: 15px;
+  transition: border-color .18s, color .18s, background .18s;
+}
+.nav-btn:hover { border-color: var(--signal); color: var(--signal); }
+.nav-btn:focus-visible { outline: 2px solid var(--signal); outline-offset: 2px; }
+.slide-counter { color: var(--paper-mute); font-size: 12px; letter-spacing: .1em; }
+.slide-counter b { color: var(--paper); font-weight: 700; }
+
+@media (max-width: 768px) {
+  .slide { padding: 68px 24px 72px; }
+  .frame-top, .frame-bot { left: 24px; right: 24px; }
+  .meta-grid { grid-template-columns: 1fr; }
+  .meta-cell { border-right: 0; border-bottom: 1px solid var(--line); }
+  .row { grid-template-columns: 40px 1fr; gap: var(--s2); }
+  .log-item { grid-template-columns: 1fr; gap: 4px; }
+  .log { padding-left: var(--s3); }
+  .ledger-row { grid-template-columns: 1fr; align-items: start; gap: 6px; }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  *, .slide { transition: none !important; animation: none !important; }
+  .slide.active .stagger > * { opacity: 1 !important; }
+  .blink { animation: none; opacity: 1; }
+}
+</style>
+</head>
+<body>
+<div class="progress-bar" id="progressBar"></div>
+<div class="slide-deck">
+
+  <!-- 01 · COVER -->
+  <div class="slide active">
+    <div class="frame-top"><span class="frame-brand"><b>INTERNAL HACK</b> · 2026</span><span>SEP 19–20</span></div>
+    <div class="slide-content">
+      <div class="stagger">
+        <div class="tag">// 00 <span class="car">—</span> cover</div>
+        <h1 class="display">이틀 동안,<br>부서를 넘어<br><span class="u">함께 만든다<span class="blink"></span></span></h1>
+        <p class="lead">업무 속에서 마주친 불편을, 평소 만나기 어려운 동료와 한 팀이 되어 실제 프로토타입으로. 사내 해커톤 2026.</p>
+        <div class="meta-grid">
+          <div class="meta-cell"><div class="k">일정</div><div class="v">09.19 – 09.20</div></div>
+          <div class="meta-cell"><div class="k">장소</div><div class="v">본사 3F 이노베이션 랩</div></div>
+          <div class="meta-cell"><div class="k">대상</div><div class="v">전 임직원</div></div>
+        </div>
+      </div>
+    </div>
+    <div class="frame-bot"><span>사내 해커톤 조직위원회</span><span>01 / 05</span></div>
+  </div>
+
+  <!-- 02 · WHY -->
+  <div class="slide">
+    <div class="frame-top"><span class="frame-brand"><b>INTERNAL HACK</b> · 2026</span><span>SEP 19–20</span></div>
+    <div class="slide-content">
+      <div class="stagger">
+        <div class="tag">// 01 <span class="car">—</span> why</div>
+        <h2 class="section-h">왜 지금, <span class="u">우리끼리</span> 만드는가</h2>
+        <div class="rows">
+          <div class="row"><span class="idx">01</span><div><h3>실무에서 나온 문제</h3><p>가장 잘 아는 사람이 가장 잘 푼다. 업무 개선, 사내 도구, 새 아이디어 — 부서에서 마주한 문제를 자유롭게.</p></div></div>
+          <div class="row"><span class="idx">02</span><div><h3>부서를 가로지르는 팀</h3><p>개발·기획·디자인이 한 팀으로. 조직도 밖에서 협업하는 이틀이 이후의 일하는 방식을 바꾼다.</p></div></div>
+          <div class="row"><span class="idx">03</span><div><h3>실제 도입으로 이어지는 결과</h3><p>우수 결과물은 정식 과제 전환을 검토한다. 데모로 끝나지 않고, 만든 것이 실무에 쓰인다.</p></div></div>
+        </div>
+      </div>
+    </div>
+    <div class="frame-bot"><span>목적</span><span>02 / 05</span></div>
+  </div>
+
+  <!-- 03 · SCHEDULE -->
+  <div class="slide">
+    <div class="frame-top"><span class="frame-brand"><b>INTERNAL HACK</b> · 2026</span><span>SEP 19–20</span></div>
+    <div class="slide-content">
+      <div class="stagger">
+        <div class="tag">// 02 <span class="car">—</span> schedule</div>
+        <h2 class="section-h">이틀간의 <span class="u">진행 순서</span></h2>
+        <div class="log">
+          <div class="log-item hot"><span class="log-time">D1 <span class="d">·</span> 10:00</span><div class="log-body"><h3>오프닝 & 팀 빌딩</h3><p>대표 인사, 주제 소개, 팀 구성</p></div></div>
+          <div class="log-item"><span class="log-time">D1 <span class="d">·</span> 13:00</span><div class="log-body"><h3>개발 시작</h3><p>멘토 라운드, 중간 점검, 저녁 제공</p></div></div>
+          <div class="log-item"><span class="log-time">D2 <span class="d">·</span> 13:00</span><div class="log-body"><h3>개발 마감</h3><p>결과물 제출, 발표 리허설</p></div></div>
+          <div class="log-item"><span class="log-time">D2 <span class="d">·</span> 15:00</span><div class="log-body"><h3>발표 & 시상</h3><p>팀별 5분 데모, 심사, 시상식</p></div></div>
+        </div>
+      </div>
+    </div>
+    <div class="frame-bot"><span>일정 · 36H</span><span>03 / 05</span></div>
+  </div>
+
+  <!-- 04 · AWARDS -->
+  <div class="slide">
+    <div class="frame-top"><span class="frame-brand"><b>INTERNAL HACK</b> · 2026</span><span>SEP 19–20</span></div>
+    <div class="slide-content">
+      <div class="stagger">
+        <div class="tag">// 03 <span class="car">—</span> awards</div>
+        <h2 class="section-h">포상 <span class="mono-cap" style="margin-left:12px;">총 2,000만원</span></h2>
+        <div class="ledger">
+          <div class="ledger-row lead-row"><div class="lhs"><span class="rank">대상</span><span class="note">1개 팀 · 정식 과제 전환 검토</span></div><span class="amt">₩10,000,000</span></div>
+          <div class="ledger-row"><div class="lhs"><span class="rank">우수상</span><span class="note">2개 팀</span></div><span class="amt">₩5,000,000</span></div>
+          <div class="ledger-row"><div class="lhs"><span class="rank">인기상</span><span class="note">현장 투표 1위</span></div><span class="amt">₩2,000,000</span></div>
+        </div>
+        <div class="perks">
+          <span class="perk">참가자 전원 굿즈</span>
+          <span class="perk">특별 휴가 1일</span>
+          <span class="perk">식사·간식 제공</span>
+          <span class="perk">전사 뉴스레터 소개</span>
+        </div>
+      </div>
+    </div>
+    <div class="frame-bot"><span>포상 & 혜택</span><span>04 / 05</span></div>
+  </div>
+
+  <!-- 05 · CTA -->
+  <div class="slide">
+    <div class="frame-top"><span class="frame-brand"><b>INTERNAL HACK</b> · 2026</span><span>SEP 19–20</span></div>
+    <div class="slide-content">
+      <div class="stagger">
+        <div class="tag">// 04 <span class="car">—</span> join</div>
+        <h2 class="display" style="font-size:clamp(38px,6vw,84px);">함께할 동료를<br><span class="u">찾아보세요<span class="blink"></span></span></h2>
+        <p class="lead">개인 신청도 환영합니다 — 현장 팀 매칭을 지원해요. 팀당 2~5명, 부서 무관. 신청 마감까지 D-14.</p>
+        <div class="cta-actions">
+          <a class="btn" href="#" onclick="return false;">
+            사내 포털에서 신청
+            <svg viewBox="0 0 24 24"><path d="M5 12h14M13 6l6 6-6 6" stroke-linecap="round" stroke-linejoin="round"/></svg>
+          </a>
+          <span class="cta-url"><span class="p">→</span> portal.company.com/hackathon</span>
+        </div>
+      </div>
+    </div>
+    <div class="frame-bot"><span>신청</span><span>05 / 05</span></div>
+  </div>
+
+</div>
+
+<div class="nav-controls">
+  <button class="nav-btn" onclick="prevSlide()" aria-label="이전 슬라이드">←</button>
+  <span class="slide-counter"><b id="current">01</b> / <span id="total">05</span></span>
+  <button class="nav-btn" onclick="nextSlide()" aria-label="다음 슬라이드">→</button>
+</div>
+
+<script>
+let current = 1;
+const slides = document.querySelectorAll('.slide');
+const total = slides.length;
+const pad = (n) => String(n).padStart(2, '0');
+document.getElementById('total').textContent = pad(total);
+
+function showSlide(n) {
+  current = Math.max(1, Math.min(n, total));
+  slides.forEach((s, i) => s.classList.toggle('active', i === current - 1));
+  document.getElementById('current').textContent = pad(current);
+  document.getElementById('progressBar').style.width = (current / total * 100) + '%';
+}
+function nextSlide() { showSlide(current + 1); }
+function prevSlide() { showSlide(current - 1); }
+
+document.addEventListener('keydown', (e) => {
+  if (e.key === 'ArrowRight' || e.key === ' ') { e.preventDefault(); nextSlide(); }
+  if (e.key === 'ArrowLeft') { e.preventDefault(); prevSlide(); }
+});
+document.addEventListener('click', (e) => {
+  if (!e.target.closest('.nav-controls') && !e.target.closest('.btn')) nextSlide();
+});
+showSlide(1);
+</script>
+</body>
+</html>

@@ -1,0 +1,783 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+<title>Hello AI Hackathon — 참가팀 운영 대시보드 (ver2)</title>
+<meta name="description" content="Hello AI Hackathon 참가팀 진행 상태·제출 현황·심사 결과 운영 대시보드." />
+<link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'%3E%3Crect width='100' height='100' rx='24' fill='%232b6bff'/%3E%3Ctext x='50' y='52' font-family='sans-serif' font-size='56' font-weight='800' fill='white' text-anchor='middle' dominant-baseline='central'%3EH%3C/text%3E%3C/svg%3E">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Manrope:wght@200;300;400;500;600;700;800&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
+<style>
+  /* typed props for pointer parallax (index.html 참고) */
+  @property --mx { syntax: "<number>"; inherits: true; initial-value: 0; }
+  @property --my { syntax: "<number>"; inherits: true; initial-value: 0; }
+
+  /* ============ DESIGN TOKENS (Aura-style liquid glass ver2) ============ */
+  :root {
+    --blue: #2b6bff; --blue-deep: #1e50d8; --blue-tint: #eaf1ff;
+    --sea-0: #DCEBFF; --sea-1: #86B4F5; --sea-2: #3D7FDB; --foam-a: #1A5FBF; --foam-b: #4E97F0;
+    --ink: #0f1b33; --text: #1c2740; --text-2: #565f7a; --text-3: #697089;
+    --line: #edf0f6; --line-2: #f3f5fa;
+    --green: #16a34a; --red: #e5484d;
+    --radius: 10px; --radius-lg: 14px; --radius-xl: 16px;
+    --card: rgba(255,255,255,.66);
+    --card-blur: saturate(165%) blur(18px);
+    --card-line: rgba(255,255,255,.75);
+    --card-shadow: 0 10px 30px rgba(30,70,150,.14), inset 0 1px 1px rgba(255,255,255,.85), inset 0 -1px 2px rgba(120,160,220,.22);
+  }
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  body {
+    font-family: 'Manrope', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+    color: var(--text); line-height: 1.5; height: 100dvh; overflow: hidden;
+    -webkit-font-smoothing: antialiased; -moz-osx-font-smoothing: grayscale;
+    letter-spacing: -0.005em; word-break: keep-all;
+    background: var(--sea-0);
+  }
+  .mono { font-family: 'JetBrains Mono', monospace; }
+
+  /* 키보드 포커스 링 (a11y) */
+  :focus-visible { outline: 2px solid var(--blue); outline-offset: 2px; }
+
+  /* ============ SEASCAPE BACKGROUND (index.html 참고) ============ */
+  .seascape { position: fixed; inset: 0; z-index: -1; overflow: hidden; pointer-events: none; }
+  .sea {
+    position: absolute; inset: 0;
+    background: linear-gradient(180deg, #F2F7FF 0%, #EDF4FF 38%, #C4DBFA 66%, #86B4F0 86%, #4E93E0 100%);
+  }
+  .waterscape {
+    position: absolute; inset: 0;
+    transform: translate(calc(var(--mx) * 3vmax), calc(var(--my) * 2vmax));
+    transition: transform .5s cubic-bezier(.2,.7,.3,1);
+  }
+  .swell { position: absolute; border-radius: 50%; will-change: transform; animation-timing-function: ease-in-out; animation-iteration-count: infinite; animation-direction: alternate; }
+  .s1 { width: 90vmax; height: 70vmax; bottom: -40vmax; left: -25vmax; background: radial-gradient(ellipse at 50% 50%, rgba(40,115,215,.40), rgba(40,115,215,0) 62%); animation-name: sway-a; animation-duration: 17s; }
+  .s2 { width: 80vmax; height: 60vmax; bottom: -36vmax; right: -20vmax; background: radial-gradient(ellipse at 50% 50%, rgba(20,80,175,.36), rgba(20,80,175,0) 60%); animation-name: sway-b; animation-duration: 23s; }
+  .s3 { width: 70vmax; height: 50vmax; bottom: -30vmax; left: 20vw; background: radial-gradient(ellipse at 50% 50%, rgba(70,150,240,.44), rgba(70,150,240,0) 62%); animation-name: sway-a; animation-duration: 12s; animation-delay: -6s; }
+  @keyframes sway-a { 0% { transform: translate(0,0) scale(1); } 25% { transform: translate(6vmax,-7vmax) scale(1.06); } 50% { transform: translate(12vmax,0) scale(1); } 75% { transform: translate(18vmax,7vmax) scale(.95); } 100% { transform: translate(24vmax,0) scale(1.02); } }
+  @keyframes sway-b { 0% { transform: translate(0,0) scale(1); } 25% { transform: translate(-6vmax,6vmax) scale(.95); } 50% { transform: translate(-11vmax,0) scale(1.05); } 75% { transform: translate(-16vmax,-6vmax) scale(1); } 100% { transform: translate(-21vmax,0) scale(1.03); } }
+
+  /* bottom wave band: seamless roll + bob, blurred crest */
+  .waves { position: absolute; left: 0; bottom: 0; width: 100%; height: 60vh; pointer-events: none; z-index: 1; filter: blur(4px); }
+  .wave { position: absolute; left: 0; bottom: -6vh; width: 200%; height: 100%; will-change: transform; animation: roll linear infinite; }
+  .wave svg { width: 100%; height: 100%; display: block; will-change: transform; animation: bob ease-in-out infinite alternate; }
+  .w1 { animation-duration: 19s; opacity: .72; } .w2 { animation-duration: 13s; opacity: .88; animation-direction: reverse; } .w3 { animation-duration: 9s; opacity: 1; }
+  .w1 svg { animation-duration: 7s; } .w2 svg { animation-duration: 5s; animation-delay: -2s; } .w3 svg { animation-duration: 3.5s; animation-delay: -1s; }
+  @keyframes roll { from { transform: translateX(0); } to { transform: translateX(-50%); } }
+  @keyframes bob { from { transform: translateY(2vh); } to { transform: translateY(-2.5vh); } }
+
+  /* ============ FLOATING GLASS SHELL ============ */
+  .app {
+    display: flex; height: calc(100dvh - 72px); width: calc(100% - 40px); max-width: 1660px;
+    margin: 20px auto 52px; overflow: hidden; border-radius: var(--radius-xl);
+    background: rgba(255,255,255,.28);
+    backdrop-filter: saturate(160%) blur(26px); -webkit-backdrop-filter: saturate(160%) blur(26px);
+    border: 1px solid rgba(255,255,255,.5);
+    box-shadow:
+      0 40px 100px rgba(20,60,140,.3),
+      inset 0 3px 4px rgba(255,255,255,.95),
+      inset 4px 0 12px rgba(255,255,255,.45),
+      inset 0 -5px 12px rgba(80,135,215,.42),
+      inset -6px 0 14px rgba(80,135,215,.32);
+  }
+
+  /* ============ SIDEBAR ============ */
+  .sidebar {
+    width: 88px; flex: none; display: flex; flex-direction: column; align-items: center;
+    padding: 22px 0 24px; gap: 6px;
+    background: rgba(255,255,255,.6); border-right: 1px solid var(--card-line);
+    backdrop-filter: blur(20px); -webkit-backdrop-filter: blur(20px);
+  }
+  .side-brand {
+    width: 46px; height: 46px; border-radius: 15px; margin-bottom: 20px;
+    background: linear-gradient(135deg, var(--blue), #5b8cff); color: #fff;
+    display: flex; align-items: center; justify-content: center; font-weight: 800; font-size: 21px;
+    box-shadow: 0 8px 22px rgba(43,107,255,.42), inset 0 1px 0 rgba(255,255,255,.5);
+  }
+  .nav { display: flex; flex-direction: column; gap: 6px; align-items: center; }
+  .nav-item {
+    width: 48px; height: 48px; border-radius: 15px; border: none; background: transparent;
+    color: var(--text-3); cursor: pointer; display: flex; align-items: center; justify-content: center;
+    transition: background .15s, color .15s, transform .15s;
+  }
+  .nav-item svg { width: 22px; height: 22px; }
+  .nav-item:hover { background: #eef2f8; color: var(--text); }
+  .nav-item.active { background: linear-gradient(135deg, var(--blue), #4f83ff); color: #fff; box-shadow: 0 8px 20px rgba(43,107,255,.4); }
+  .nav-item.active:hover { color: #fff; transform: none; }
+  .nav-spacer { flex: 1; }
+  .nav-item.danger { color: var(--red); } .nav-item.danger:hover { background: #fdeef0; }
+
+  /* ============ MAIN (scroll container) ============ */
+  .main { flex: 1; min-height: 0; display: flex; flex-direction: column; overflow: hidden; padding: 26px 32px 24px; }
+
+  /* ============ TOPBAR ============ */
+  .topbar { display: flex; align-items: flex-start; justify-content: space-between; gap: 16px; margin-bottom: 24px; }
+  .greet h1 { font-size: clamp(24px, 2.6vw, 32px); font-weight: 800; letter-spacing: -0.03em; color: var(--ink); }
+  .greet p { font-size: 15px; color: var(--text-2); margin-top: 6px; }
+  .topbar-actions { display: flex; align-items: center; gap: 12px; flex: none; }
+  .icon-btn {
+    width: 46px; height: 46px; border-radius: 50%; border: 1px solid var(--card-line);
+    background: var(--card); backdrop-filter: var(--card-blur); -webkit-backdrop-filter: var(--card-blur);
+    color: var(--text-2); cursor: pointer; display: flex; align-items: center; justify-content: center;
+    box-shadow: var(--card-shadow); transition: color .15s, transform .15s;
+  }
+  .icon-btn svg { width: 19px; height: 19px; }
+  .icon-btn:hover { color: var(--blue); transform: translateY(-2px); }
+  .avatar {
+    width: 46px; height: 46px; border-radius: 50%; flex: none;
+    background: linear-gradient(135deg, #2b6bff, #7a4dff); color: #fff;
+    display: flex; align-items: center; justify-content: center; font-weight: 800; font-size: 16px;
+    box-shadow: 0 8px 20px rgba(43,107,255,.4), inset 0 1px 0 rgba(255,255,255,.4);
+  }
+
+  /* ============ CARD PRIMITIVE ============ */
+  .card {
+    background: var(--card); backdrop-filter: var(--card-blur); -webkit-backdrop-filter: var(--card-blur);
+    border: 1px solid var(--card-line); border-radius: var(--radius-lg); box-shadow: var(--card-shadow);
+  }
+
+  /* ============ KPI TILES ============ */
+  .kpis { display: grid; grid-template-columns: repeat(4, 1fr); gap: 18px; margin-bottom: 22px; }
+  .kpi { padding: 22px; display: flex; flex-direction: column; gap: 14px; transition: transform .2s cubic-bezier(.4,0,.2,1), box-shadow .2s; }
+  .kpi:hover { transform: translateY(-4px); box-shadow: 0 18px 40px rgba(40,70,150,.14); }
+  .kpi-head { display: flex; align-items: center; gap: 12px; }
+  .kpi-icon { width: 42px; height: 42px; border-radius: 13px; display: flex; align-items: center; justify-content: center; flex: none; }
+  .kpi-icon svg { width: 21px; height: 21px; }
+  .kpi-icon.t-blue { background: #eaf1ff; color: #2b6bff; }
+  .kpi-icon.t-violet { background: #eeecff; color: #6d5cff; }
+  .kpi-icon.t-cyan { background: #e4f7fb; color: #0aa2b8; }
+  .kpi-icon.t-amber { background: #fff2e6; color: #e07818; }
+  .kpi-title { font-size: 14px; font-weight: 600; color: var(--text-2); }
+  .kpi-value { font-size: 33px; font-weight: 800; letter-spacing: -0.03em; line-height: 1; color: var(--ink); }
+  .kpi-value .unit { font-size: 16px; font-weight: 700; color: var(--blue); margin-left: 3px; }
+  .kpi-sub { font-size: 12.5px; color: var(--text-3); font-weight: 600; font-family: 'JetBrains Mono', monospace; }
+
+  /* ============ CONTROL BAR (sticky) ============ */
+  .controls-wrap { padding: 14px 18px; margin-bottom: 14px; }
+  .controls { display: flex; align-items: center; gap: 12px; flex-wrap: wrap; }
+  .search {
+    display: flex; align-items: center; gap: 8px; background: #fff; border: 1px solid var(--line);
+    border-radius: 999px; padding: 9px 16px; min-width: 250px; transition: border-color .15s, box-shadow .15s;
+  }
+  .search:focus-within { border-color: var(--blue); box-shadow: 0 0 0 3px rgba(43,107,255,.15); }
+  .search svg { width: 15px; height: 15px; color: var(--text-3); flex: none; }
+  .search input { border: none; outline: none; font-family: inherit; font-size: 14px; color: var(--text); width: 100%; background: transparent; }
+  .search input::placeholder { color: var(--text-3); }
+  .chip-group { display: flex; gap: 8px; flex-wrap: wrap; }
+  .chip {
+    background: #fff; border: 1px solid var(--line); padding: 8px 14px; border-radius: 999px;
+    font-family: inherit; font-size: 13px; font-weight: 600; color: var(--text-2);
+    cursor: pointer; transition: all .15s; display: inline-flex; align-items: center; gap: 6px;
+  }
+  .chip:hover { color: var(--ink); border-color: #c9d4e8; }
+  .chip.active { background: linear-gradient(135deg, var(--blue), #4f83ff); border-color: transparent; color: #fff; box-shadow: 0 6px 16px rgba(43,107,255,.36); }
+  .chip .count { font-family: 'JetBrains Mono', monospace; font-size: 11px; opacity: .75; }
+  .spacer { flex: 1 1 auto; }
+  .select {
+    font-family: inherit; font-size: 13px; font-weight: 600; color: var(--text-2);
+    background: #fff; border: 1px solid var(--line); border-radius: 999px;
+    padding: 9px 34px 9px 15px; cursor: pointer; appearance: none;
+    background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='12' viewBox='0 0 24 24' fill='none' stroke='%23939db4' stroke-width='2.5' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpolyline points='6 9 12 15 18 9'/%3E%3C/svg%3E");
+    background-repeat: no-repeat; background-position: right 13px center; transition: border-color .15s, color .15s;
+  }
+  .select:hover { border-color: #c9d4e8; color: var(--ink); }
+
+  /* ============ RESULT META ============ */
+  .resultmeta { padding: 2px 4px 12px; font-size: 13px; color: var(--text-2); font-family: 'JetBrains Mono', monospace; }
+  .resultmeta b { color: var(--ink); font-weight: 600; }
+
+  /* ============ TABLE ============ */
+  .table-card { position: relative; padding: 8px; flex: 1; min-height: 0; display: flex; flex-direction: column; }
+  .table-scroll { overflow: auto; border-radius: 14px; flex: 1; min-height: 0; scrollbar-width: none; -ms-overflow-style: none; }
+  .table-scroll::-webkit-scrollbar { width: 0; height: 0; display: none; }
+  /* custom overlay thumb — 레이아웃 공간 0, idle 시 페이드아웃 */
+  .oscroll { position: absolute; right: 6px; width: 6px; border-radius: 999px; background: rgba(64,84,134,.34); opacity: 0; transition: opacity .4s ease, background .15s; z-index: 5; cursor: grab; }
+  .oscroll:hover { background: rgba(64,84,134,.52); }
+  .oscroll.show { opacity: 1; }
+  .oscroll.drag { cursor: grabbing; background: rgba(64,84,134,.62); }
+  table { width: 100%; border-collapse: separate; border-spacing: 0; min-width: 980px; }
+  thead th {
+    text-align: left; font-size: 11px; font-weight: 800; text-transform: uppercase; letter-spacing: .05em;
+    color: var(--text-3); padding: 14px 16px; white-space: nowrap; background: #f7f9fc; border-bottom: 1px solid var(--line);
+    position: sticky; top: 0; z-index: 2;
+  }
+  thead th:first-child { border-top-left-radius: 12px; }
+  thead th:last-child { border-top-right-radius: 12px; }
+  thead th.sortable { cursor: pointer; user-select: none; transition: color .15s; }
+  thead th.sortable:hover { color: var(--blue); }
+  th .arrow { display: inline-block; margin-left: 4px; font-size: 10px; color: var(--blue); opacity: 0; }
+  th.sorted .arrow { opacity: 1; }
+  tbody td { padding: 14px 16px; border-bottom: 1px solid var(--line-2); font-size: 14px; vertical-align: middle; }
+  tbody tr:last-child td { border-bottom: none; }
+  tbody tr { cursor: pointer; transition: background .14s; }
+  tbody tr:hover td { background: var(--blue-tint); }
+  .rownum { font-family: 'JetBrains Mono', monospace; font-size: 13px; color: var(--text-3); font-weight: 500; }
+  .t-id { font-family: 'JetBrains Mono', monospace; font-size: 11px; color: var(--text-3); margin-bottom: 2px; }
+  .t-name { font-weight: 700; letter-spacing: -0.01em; color: var(--ink); }
+  .t-sub { color: var(--text-2); }
+  .num { font-family: 'JetBrains Mono', monospace; font-size: 13px; color: var(--text); }
+  .muted { color: var(--text-3); }
+  .go { color: var(--blue); font-weight: 700; font-size: 13px; white-space: nowrap; }
+
+  /* ============ PILLS / BADGES ============ */
+  .pill { display: inline-flex; align-items: center; gap: 6px; padding: 4px 11px; border-radius: 999px; font-size: 12px; font-weight: 700; white-space: nowrap; }
+  .pill .dot { width: 6px; height: 6px; border-radius: 50%; flex: none; }
+  .st-접수완료  { background: #f1f3f7; color: #5a6580; } .st-접수완료 .dot { background: #99a3b8; }
+  .st-선정중    { background: #eaf1ff; color: #2b6bff; } .st-선정중 .dot { background: #2b6bff; }
+  .st-미선정    { background: #fdeef0; color: var(--red); } .st-미선정 .dot { background: var(--red); }
+  .st-과제진행  { background: #e9f5ff; color: #0a78c2; } .st-과제진행 .dot { background: #0a9ad0; }
+  .st-제출완료  { background: #e4f7fb; color: #0a8296; } .st-제출완료 .dot { background: #0aa2b8; }
+  .st-본선심사  { background: #fff3e6; color: #c2610f; } .st-본선심사 .dot { background: #e07818; }
+  .st-결선심사  { background: #e9fbf1; color: #0f8a4d; } .st-결선심사 .dot { background: var(--green); animation: pulse 2s ease-in-out infinite; }
+  @keyframes pulse { 0%,100% { opacity: 1; transform: scale(1); } 50% { opacity: .5; transform: scale(1.25); } }
+
+  .award { display: inline-flex; align-items: center; padding: 3px 10px; border-radius: 999px; background: #eef0ff; color: #4433c9; font-size: 11px; font-weight: 800; letter-spacing: .01em; white-space: nowrap; }
+  .track-badge { display: inline-flex; padding: 3px 10px; border-radius: 999px; background: #f4f6fa; border: 1px solid var(--line); color: var(--text-2); font-size: 12px; font-weight: 600; white-space: nowrap; }
+  .yes { color: var(--green); font-weight: 800; font-size: 15px; } .no { color: var(--text-3); }
+  .empty { padding: 60px 20px; text-align: center; color: var(--text-3); }
+
+  /* ============ DETAIL PANEL ============ */
+  .overlay { position: fixed; inset: 0; background: rgba(16,28,60,.34); backdrop-filter: blur(3px); -webkit-backdrop-filter: blur(3px); opacity: 0; pointer-events: none; transition: opacity .24s; z-index: 60; }
+  .overlay.show { opacity: 1; pointer-events: auto; }
+  .panel {
+    position: fixed; top: 0; right: 0; height: 100%; width: 560px; max-width: 94vw;
+    background: rgba(255,255,255,.82); backdrop-filter: saturate(180%) blur(34px); -webkit-backdrop-filter: saturate(180%) blur(34px);
+    border-left: 1px solid var(--card-line); z-index: 70;
+    transform: translateX(100%); transition: transform .3s cubic-bezier(.32,.72,0,1);
+    display: flex; flex-direction: column; box-shadow: -30px 0 80px rgba(16,32,90,.26);
+  }
+  .panel.show { transform: translateX(0); }
+  .panel-head { padding: 26px 30px 20px; border-bottom: 1px solid var(--line); position: relative; }
+  .panel-head .pid { font-family: 'JetBrains Mono', monospace; font-size: 12px; color: var(--text-3); margin-bottom: 6px; }
+  .panel-head h2 { font-size: 25px; font-weight: 800; letter-spacing: -0.03em; color: var(--ink); padding-right: 44px; }
+  .panel-close {
+    position: absolute; top: 22px; right: 24px; width: 34px; height: 34px; border-radius: 11px;
+    border: 1px solid var(--line); background: #fff; cursor: pointer; color: var(--text-2);
+    display: flex; align-items: center; justify-content: center; transition: all .15s;
+  }
+  .panel-close:hover { border-color: var(--blue); color: var(--blue); transform: rotate(90deg); }
+  .panel-body { flex: 1; min-height: 0; padding: 24px 30px 44px; overflow-y: auto; }
+  .panel-tags { display: flex; flex-wrap: wrap; gap: 8px; }
+  .panel-head .panel-tags { margin-top: 14px; }
+  .kv-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; margin-bottom: 24px; }
+  .kv { background: #f7f9fc; border: 1px solid var(--line); border-radius: var(--radius); padding: 14px 16px; }
+  .kv .k { font-size: 11px; text-transform: uppercase; letter-spacing: .04em; color: var(--text-3); font-weight: 700; margin-bottom: 5px; }
+  .kv .v { font-size: 15px; font-weight: 700; color: var(--ink); }
+  .kv .v.mono { font-family: 'JetBrains Mono', monospace; font-size: 14px; }
+  .sec-title { font-size: 11px; text-transform: uppercase; letter-spacing: .05em; color: var(--text-3); font-weight: 800; margin: 28px 0 12px; padding-top: 20px; border-top: 1px solid var(--line); }
+  .panel-body > .sec-title:first-child { margin-top: 2px; padding-top: 0; border-top: none; }
+  .proj-name { font-size: 16px; font-weight: 800; letter-spacing: -0.01em; margin-bottom: 6px; color: var(--ink); }
+  .proj-desc { font-size: 14px; color: var(--text-2); line-height: 1.65; margin-bottom: 24px; }
+  .member-list { display: flex; flex-direction: column; gap: 8px; margin-bottom: 24px; }
+  .member-row { display: flex; align-items: center; justify-content: space-between; background: #f7f9fc; border: 1px solid var(--line); border-radius: var(--radius); padding: 11px 15px; }
+  .member-row.lead { background: var(--blue-tint); border-color: #d5e2ff; }
+  .member-row .m-name { font-size: 14px; font-weight: 700; color: var(--text); }
+  .member-row.lead .m-name { color: var(--blue); }
+  .member-row .m-role { font-size: 11px; color: var(--text-2); font-weight: 600; background: #eef1f7; padding: 3px 9px; border-radius: 999px; }
+  .member-row.lead .m-role { background: rgba(43,107,255,.14); color: var(--blue); }
+  .repo-btn { display: flex; align-items: center; justify-content: center; gap: 8px; width: 100%; padding: 13px 18px; border-radius: var(--radius); background: linear-gradient(135deg, var(--blue), #4f83ff); color: #fff; font-size: 14px; font-weight: 700; text-decoration: none; box-shadow: 0 8px 20px rgba(43,107,255,.32); transition: transform .15s, box-shadow .15s; }
+  .repo-btn:hover { transform: translateY(-2px); box-shadow: 0 12px 26px rgba(43,107,255,.42); }
+  .repo-btn svg { width: 16px; height: 16px; }
+  .repo-url { margin-top: 10px; font-family: 'JetBrains Mono', monospace; font-size: 12px; color: var(--text-3); word-break: break-all; }
+
+  /* ============ FOOTER ============ */
+  .foot { flex: none; display: flex; justify-content: space-between; font-size: 12px; color: var(--text-3); font-family: 'JetBrains Mono', monospace; flex-wrap: wrap; gap: 10px; margin-top: 16px; padding: 0 4px; }
+
+  /* ============ RESPONSIVE ============ */
+  @media (max-width: 900px) {
+    .kpis { grid-template-columns: repeat(2, 1fr); }
+  }
+  @media (max-width: 760px) {
+    body { height: auto; overflow: auto; }
+    .app { flex-direction: column; height: auto; width: auto; margin: 12px; }
+    .sidebar { display: none; }
+    .main { display: block; overflow: visible; padding: 20px; }
+    .table-card { flex: none; display: block; }
+    .table-scroll { overflow-x: auto; overflow-y: visible; }
+    thead th { position: static; }
+    .search { min-width: 0; width: 100%; }
+    .spacer { display: none; }
+  }
+
+  /* ============ REDUCED MOTION ============ */
+  @media (prefers-reduced-motion: reduce) {
+    .sea, .swell, .wave, .wave svg, .st-결선심사 .dot { animation: none; }
+    .waterscape { transform: none; transition: none; }
+    .oscroll { transition: opacity .01s; }
+    .kpi:hover, .icon-btn:hover, .panel-close:hover, .nav-item:hover, .repo-btn:hover { transform: none; }
+    .main { scroll-behavior: auto; }
+  }
+</style>
+</head>
+<body>
+
+<div class="seascape" aria-hidden="true">
+  <div class="sea"></div>
+  <div class="waterscape">
+    <div class="swell s1"></div>
+    <div class="swell s2"></div>
+    <div class="swell s3"></div>
+  </div>
+  <div class="waves">
+    <div class="wave w1">
+      <svg viewBox="0 0 1440 200" preserveAspectRatio="none">
+        <defs><linearGradient id="g1" x1="0" y1="0" x2="0" y2="1">
+          <stop offset="0" stop-color="#9CC8FF" stop-opacity="0"/>
+          <stop offset="1" stop-color="#9CC8FF" stop-opacity=".7"/>
+        </linearGradient></defs>
+        <path fill="url(#g1)" d="M0,90 C120,40 240,40 360,90 C480,140 600,140 720,90 C840,40 960,40 1080,90 C1200,140 1320,140 1440,90 L1440,200 L0,200 Z"/>
+      </svg>
+    </div>
+    <div class="wave w2">
+      <svg viewBox="0 0 1440 200" preserveAspectRatio="none">
+        <defs><linearGradient id="g2" x1="0" y1="0" x2="0" y2="1">
+          <stop offset="0" stop-color="#5E9EEA" stop-opacity="0"/>
+          <stop offset="1" stop-color="#5E9EEA" stop-opacity=".78"/>
+        </linearGradient></defs>
+        <path fill="url(#g2)" d="M0,110 C120,60 240,60 360,110 C480,160 600,160 720,110 C840,60 960,60 1080,110 C1200,160 1320,160 1440,110 L1440,200 L0,200 Z"/>
+      </svg>
+    </div>
+    <div class="wave w3">
+      <svg viewBox="0 0 1440 200" preserveAspectRatio="none">
+        <defs><linearGradient id="g3" x1="0" y1="0" x2="0" y2="1">
+          <stop offset="0" stop-color="#2E72CE" stop-opacity="0"/>
+          <stop offset="1" stop-color="#2E72CE" stop-opacity=".85"/>
+        </linearGradient></defs>
+        <path fill="url(#g3)" d="M0,130 C120,85 240,85 360,130 C480,175 600,175 720,130 C840,85 960,85 1080,130 C1200,175 1320,175 1440,130 L1440,200 L0,200 Z"/>
+      </svg>
+    </div>
+  </div>
+</div>
+
+<div class="app">
+
+  <!-- ============ SIDEBAR (nav items decorative — single-view tool) ============ -->
+  <aside class="sidebar">
+    <div class="side-brand">H</div>
+    <nav class="nav">
+      <button class="nav-item active" title="대시보드" aria-label="대시보드">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 9.5 12 3l9 6.5"/><path d="M5 10v10h14V10"/><path d="M9 20v-6h6v6"/></svg>
+      </button>
+      <button class="nav-item" title="통계" aria-label="통계">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="6" y1="20" x2="6" y2="12"/><line x1="12" y1="20" x2="12" y2="4"/><line x1="18" y1="20" x2="18" y2="14"/></svg>
+      </button>
+      <button class="nav-item" title="트랙" aria-label="트랙">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="3" width="7" height="7" rx="1.5"/><rect x="14" y="3" width="7" height="7" rx="1.5"/><rect x="3" y="14" width="7" height="7" rx="1.5"/><rect x="14" y="14" width="7" height="7" rx="1.5"/></svg>
+      </button>
+      <button class="nav-item" title="팀" aria-label="팀">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 0 0-3-3.87"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/></svg>
+      </button>
+      <button class="nav-item" title="메시지" aria-label="메시지">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 11.5a8.38 8.38 0 0 1-.9 3.8 8.5 8.5 0 0 1-7.6 4.7 8.38 8.38 0 0 1-3.8-.9L3 21l1.9-5.7a8.38 8.38 0 0 1-.9-3.8 8.5 8.5 0 0 1 4.7-7.6 8.38 8.38 0 0 1 3.8-.9h.5a8.48 8.48 0 0 1 8 8v.5z"/></svg>
+      </button>
+    </nav>
+    <div class="nav-spacer"></div>
+    <button class="nav-item" title="설정" aria-label="설정">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 1 1-2.83 2.83l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-4 0v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 1 1-2.83-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1 0-4h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 1 1 2.83-2.83l.06.06a1.65 1.65 0 0 0 1.82.33H9a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 4 0v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 1 1 2.83 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 0 4h-.09a1.65 1.65 0 0 0-1.51 1z"/></svg>
+    </button>
+    <button class="nav-item danger" title="로그아웃" aria-label="로그아웃">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4"/><polyline points="16 17 21 12 16 7"/><line x1="21" y1="12" x2="9" y2="12"/></svg>
+    </button>
+  </aside>
+
+  <!-- ============ MAIN ============ -->
+  <div class="main">
+
+    <!-- TOPBAR -->
+    <div class="topbar">
+      <div class="greet">
+        <h1>안녕하세요, People팀</h1>
+        <p>Hello AI Hackathon 참가팀 현황을 확인하세요</p>
+      </div>
+      <div class="topbar-actions">
+        <button class="icon-btn" id="searchBtn" title="검색으로 이동" aria-label="검색">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg>
+        </button>
+        <div class="avatar" title="People팀">P</div>
+      </div>
+    </div>
+
+    <!-- KPI TILES -->
+    <div class="kpis" id="kpis"></div>
+
+    <!-- CONTROL BAR -->
+    <section class="controls-wrap card">
+      <div class="controls">
+        <div class="search">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg>
+          <input id="search" type="text" aria-label="팀 검색" placeholder="팀명 · 팀장 · 소속 · 프로젝트 검색" />
+        </div>
+        <div class="chip-group" id="statusChips"></div>
+        <div class="spacer"></div>
+        <select class="select" id="trackFilter"></select>
+        <select class="select" id="sortSelect">
+          <option value="id-asc">번호순</option>
+          <option value="name-asc">팀명 (가나다)</option>
+          <option value="members-desc">인원 많은순</option>
+          <option value="status-asc">진행 단계순</option>
+          <option value="score-desc">점수 높은순</option>
+          <option value="updated-desc">최근 업데이트순</option>
+        </select>
+      </div>
+    </section>
+
+    <!-- TABLE -->
+    <div class="resultmeta" id="resultMeta"></div>
+    <div class="table-card card">
+      <div class="table-scroll">
+        <table>
+          <thead>
+            <tr>
+              <th style="text-align:right;width:52px">No.</th>
+              <th class="sortable" data-key="name">팀 <span class="arrow"></span></th>
+              <th class="sortable" data-key="org">소속 <span class="arrow"></span></th>
+              <th>팀장</th>
+              <th class="sortable" data-key="members" style="text-align:right">인원 <span class="arrow"></span></th>
+              <th class="sortable" data-key="track">트랙 <span class="arrow"></span></th>
+              <th class="sortable" data-key="status">진행상태 <span class="arrow"></span></th>
+              <th style="text-align:center">제출</th>
+              <th class="sortable" data-key="score" style="text-align:right">점수 <span class="arrow"></span></th>
+              <th>수상</th>
+              <th class="sortable" data-key="updated">업데이트 <span class="arrow"></span></th>
+              <th></th>
+            </tr>
+          </thead>
+          <tbody id="tbody"></tbody>
+        </table>
+      </div>
+    </div>
+
+    <div class="foot">
+      <span>© 2026 Samsung Electronics System LSI · People Team</span>
+      <span id="lastUpdated"></span>
+    </div>
+
+  </div>
+</div>
+
+<!-- ============ DETAIL PANEL ============ -->
+<div class="overlay" id="overlay"></div>
+<aside class="panel" id="panel" role="dialog" aria-modal="true" aria-labelledby="pName">
+  <div class="panel-head">
+    <button class="panel-close" id="panelClose" aria-label="닫기">
+      <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
+    </button>
+    <div class="pid" id="pPid"></div>
+    <h2 id="pName"></h2>
+    <div class="panel-tags" id="pTags"></div>
+  </div>
+  <div class="panel-body" id="panelBody"></div>
+</aside>
+
+<!-- ============ DATA ============ -->
+<script src="teams.js"></script>
+<!-- ============ APP ============ -->
+<script>
+(function () {
+  const TEAMS = (window.AXC_TEAMS || []).slice();
+  const STATUS_ORDER = ["접수완료", "선정중", "미선정", "과제 진행", "제출완료", "본선 심사", "결선 심사"];
+
+  // KPI 아이콘 (inline SVG)
+  const SVG = {
+    teams:  `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="3" width="7" height="7" rx="1.5"/><rect x="14" y="3" width="7" height="7" rx="1.5"/><rect x="3" y="14" width="7" height="7" rx="1.5"/><rect x="14" y="14" width="7" height="7" rx="1.5"/></svg>`,
+    people: `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 0 0-3-3.87"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/></svg>`,
+    rate:   `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"/><polyline points="22 4 12 14.01 9 11.01"/></svg>`,
+    review: `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="4" y="3" width="16" height="18" rx="2"/><path d="M9 3v3h6V3"/><path d="M9 13l2 2 4-4"/></svg>`,
+  };
+
+  // ---- state ----
+  let activeStatus = "all";
+  let searchText = "";
+  let activeTrack = "all";
+  let sortKey = "id", sortDir = "asc";
+
+  const $ = (s) => document.querySelector(s);
+
+  // ---- KPI bar (전체 데이터 기준) ----
+  function renderKpis() {
+    const total = TEAMS.length;
+    const people = TEAMS.reduce((s, t) => s + t.members, 0);
+    const submitted = TEAMS.filter(t => t.submitted).length;
+    const rate = total ? Math.round((submitted / total) * 100) : 0;
+    const reviewing = TEAMS.filter(t => t.status === "본선 심사" || t.status === "결선 심사").length;
+    const kpis = [
+      { icon: SVG.teams,  tint: "blue",   v: total,     u: "",  title: "전체 팀",       sub: "등록 완료" },
+      { icon: SVG.people, tint: "violet", v: people,    u: "명", title: "총 참가 인원",  sub: "전 팀 합산" },
+      { icon: SVG.rate,   tint: "cyan",   v: rate,      u: "%", title: "제출 완료율",   sub: `${submitted}/${total}팀 제출` },
+      { icon: SVG.review, tint: "amber",  v: reviewing, u: "팀", title: "심사 진행중",   sub: "본선 + 결선" },
+    ];
+    $("#kpis").innerHTML = kpis.map(k => `
+      <div class="kpi card">
+        <div class="kpi-head"><span class="kpi-icon t-${k.tint}">${k.icon}</span><span class="kpi-title">${k.title}</span></div>
+        <div class="kpi-value">${k.v}${k.u ? `<span class="unit">${k.u}</span>` : ""}</div>
+        <div class="kpi-sub">${k.sub}</div>
+      </div>`).join("");
+  }
+
+  // ---- track filter options ----
+  function renderTrackOptions() {
+    const tracks = [...new Set(TEAMS.map(t => t.track))];
+    const sel = $("#trackFilter");
+    sel.innerHTML = `<option value="all">전체 트랙</option>` +
+      tracks.map(tr => `<option value="${tr}">${tr}</option>`).join("");
+  }
+
+  // ---- helpers ----
+  function baseFiltered() {
+    // 검색 + 트랙 (상태 칩 카운트 계산용)
+    return TEAMS.filter(t => {
+      if (activeTrack !== "all" && t.track !== activeTrack) return false;
+      if (searchText) {
+        const q = searchText.toLowerCase();
+        const hay = [t.name, t.leader, t.org, t.project, t.id, t.track, t.memberList.map(m => m.name).join(" ")].join(" ").toLowerCase();
+        if (!hay.includes(q)) return false;
+      }
+      return true;
+    });
+  }
+
+  function renderStatusChips() {
+    const base = baseFiltered();
+    const counts = {};
+    STATUS_ORDER.forEach(s => counts[s] = 0);
+    base.forEach(t => counts[t.status]++);
+    const chips = [{ key: "all", label: "전체", n: base.length }]
+      .concat(STATUS_ORDER.map(s => ({ key: s, label: s, n: counts[s] })));
+    $("#statusChips").innerHTML = chips.map(c =>
+      `<button class="chip${activeStatus === c.key ? " active" : ""}" data-status="${c.key}">${c.label} <span class="count">${c.n}</span></button>`
+    ).join("");
+    $("#statusChips").querySelectorAll(".chip").forEach(btn => {
+      btn.addEventListener("click", () => { activeStatus = btn.dataset.status; render(); });
+    });
+  }
+
+  function currentRows() {
+    let rows = baseFiltered();
+    if (activeStatus !== "all") rows = rows.filter(t => t.status === activeStatus);
+    // sort
+    const dir = sortDir === "asc" ? 1 : -1;
+    rows.sort((a, b) => {
+      let av, bv;
+      if (sortKey === "status") { av = STATUS_ORDER.indexOf(a.status); bv = STATUS_ORDER.indexOf(b.status); }
+      else if (sortKey === "score") { av = a.score == null ? -1 : a.score; bv = b.score == null ? -1 : b.score; }
+      else if (sortKey === "members") { av = a.members; bv = b.members; }
+      else { av = a[sortKey]; bv = b[sortKey]; }
+      if (typeof av === "string") return av.localeCompare(bv, "ko") * dir;
+      return (av - bv) * dir;
+    });
+    return rows;
+  }
+
+  const fmtDate = (iso) => iso.replaceAll("-", ".").slice(2); // 26.06.14
+
+  function renderTable() {
+    const rows = currentRows();
+    $("#resultMeta").innerHTML = `전체 <b>${TEAMS.length}</b>팀 중 <b>${rows.length}</b>팀 표시`;
+    const tb = $("#tbody");
+    if (!rows.length) {
+      tb.innerHTML = `<tr><td colspan="12"><div class="empty">조건에 맞는 팀이 없습니다.</div></td></tr>`;
+      return;
+    }
+    tb.innerHTML = rows.map((t, i) => `
+      <tr data-id="${t.id}" role="button" tabindex="0" aria-label="${t.name} 상세 보기">
+        <td style="text-align:right"><span class="rownum">${i + 1}</span></td>
+        <td><div class="t-id">${t.id}</div><div class="t-name">${t.name}</div></td>
+        <td class="t-sub">${t.org}</td>
+        <td class="t-sub">${t.leader}</td>
+        <td style="text-align:right"><span class="num">${t.members}</span></td>
+        <td><span class="track-badge">${t.track}</span></td>
+        <td><span class="pill st-${t.status.split(" ").join("")}"><span class="dot"></span>${t.status}</span></td>
+        <td style="text-align:center">${t.submitted ? '<span class="yes">✓</span>' : '<span class="no">–</span>'}</td>
+        <td style="text-align:right">${t.score == null ? '<span class="muted">–</span>' : `<span class="num">${t.score}</span>`}</td>
+        <td>${t.award ? `<span class="award">${t.award}</span>` : '<span class="muted">–</span>'}</td>
+        <td><span class="num muted">${fmtDate(t.updated)}</span></td>
+        <td><span class="go">상세 →</span></td>
+      </tr>`).join("");
+    tb.querySelectorAll("tr[data-id]").forEach(tr => {
+      tr.addEventListener("click", () => openPanel(tr.dataset.id));
+      tr.addEventListener("keydown", (e) => {
+        if (e.key === "Enter" || e.key === " ") { e.preventDefault(); openPanel(tr.dataset.id); }
+      });
+    });
+  }
+
+  function updateSortHeaders() {
+    document.querySelectorAll("thead th.sortable").forEach(th => {
+      const arrow = th.querySelector(".arrow");
+      if (th.dataset.key === sortKey) { th.classList.add("sorted"); arrow.textContent = sortDir === "asc" ? "▲" : "▼"; th.setAttribute("aria-sort", sortDir === "asc" ? "ascending" : "descending"); }
+      else { th.classList.remove("sorted"); arrow.textContent = ""; th.removeAttribute("aria-sort"); }
+    });
+  }
+
+  function syncSortSelect() {
+    $("#sortSelect").value = `${sortKey}-${sortDir}`;
+  }
+
+  function render() {
+    renderStatusChips();
+    renderTable();
+    updateSortHeaders();
+    syncSortSelect();
+  }
+
+  // ---- detail panel ----
+  let lastFocused = null;
+  function openPanel(id) {
+    const t = TEAMS.find(x => x.id === id);
+    if (!t) return;
+    lastFocused = document.activeElement;
+    $("#pPid").textContent = t.id;
+    $("#pName").textContent = t.name;
+    $("#pTags").innerHTML = `
+      <span class="pill st-${t.status.split(" ").join("")}"><span class="dot"></span>${t.status}</span>
+      <span class="track-badge">${t.track}</span>
+      ${t.award ? `<span class="award">${t.award}</span>` : ""}`;
+    const kv = [
+      ["소속", t.org, false],
+      ["팀장", t.leader, false],
+      ["인원", `${t.members}명`, true],
+      ["제출 여부", t.submitted ? "제출 완료" : "미제출", false],
+      ["심사 점수", t.score == null ? "미확정" : `${t.score} 점`, true],
+      ["최근 업데이트", t.updated, true],
+    ].map(([k, v, mono]) => `<div class="kv"><div class="k">${k}</div><div class="v${mono ? " mono" : ""}">${v}</div></div>`).join("");
+    const members = t.memberList.map((m, i) =>
+      `<div class="member-row${i === 0 ? " lead" : ""}"><span class="m-name">${i === 0 ? "★ " : ""}${m.name}</span><span class="m-role">${m.role}</span></div>`).join("");
+    $("#panelBody").innerHTML = `
+      <div class="sec-title">팀 소개</div>
+      <div class="proj-desc" style="margin-bottom:4px">${t.intro}</div>
+      <div class="kv-grid">${kv}</div>
+      <div class="sec-title">프로젝트</div>
+      <div class="proj-name">${t.project}</div>
+      <div class="proj-desc">${t.desc}</div>
+      <div class="sec-title">팀원 명단 (${t.members}명)</div>
+      <div class="member-list">${members}</div>
+      <div class="sec-title">제출물</div>
+      <a class="repo-btn" href="${t.repo}" target="_blank" rel="noopener">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M18 13v6a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h6"/><polyline points="15 3 21 3 21 9"/><line x1="10" y1="14" x2="21" y2="3"/></svg>
+        제출물 열기
+      </a>
+      <div class="repo-url">${t.repo}</div>`;
+    $("#overlay").classList.add("show");
+    $("#panel").classList.add("show");
+    $("#panelClose").focus();
+  }
+  function closePanel() {
+    if (!$("#panel").classList.contains("show")) return;
+    $("#overlay").classList.remove("show");
+    $("#panel").classList.remove("show");
+    if (lastFocused) { lastFocused.focus(); lastFocused = null; }
+  }
+
+  // ---- events ----
+  $("#search").addEventListener("input", (e) => { searchText = e.target.value.trim(); render(); });
+  $("#trackFilter").addEventListener("change", (e) => { activeTrack = e.target.value; render(); });
+  $("#sortSelect").addEventListener("change", (e) => {
+    const [k, d] = e.target.value.split("-"); sortKey = k; sortDir = d; render();
+  });
+  document.querySelectorAll("thead th.sortable").forEach(th => {
+    th.setAttribute("tabindex", "0");
+    const doSort = () => {
+      const key = th.dataset.key;
+      if (sortKey === key) sortDir = sortDir === "asc" ? "desc" : "asc";
+      else { sortKey = key; sortDir = (key === "score" || key === "members" || key === "updated") ? "desc" : "asc"; }
+      render();
+    };
+    th.addEventListener("click", doSort);
+    th.addEventListener("keydown", (e) => { if (e.key === "Enter" || e.key === " ") { e.preventDefault(); doSort(); } });
+  });
+  $("#searchBtn").addEventListener("click", () => {
+    const s = $("#search"); s.scrollIntoView({ block: "center", behavior: "smooth" }); s.focus();
+  });
+  $("#panelClose").addEventListener("click", closePanel);
+  $("#overlay").addEventListener("click", closePanel);
+  document.addEventListener("keydown", (e) => { if (e.key === "Escape") closePanel(); });
+
+  // ---- init ----
+  if (!TEAMS.length) {
+    $("#tbody").innerHTML = `<tr><td colspan="12"><div class="empty">teams.js 데이터를 불러오지 못했습니다. dashboard.html 과 같은 폴더에 teams.js 를 두세요.</div></td></tr>`;
+  } else {
+    const latest = TEAMS.reduce((m, t) => t.updated > m ? t.updated : m, TEAMS[0].updated);
+    $("#lastUpdated").textContent = `Last updated: ${latest}`;
+    renderKpis();
+    renderTrackOptions();
+    render();
+  }
+})();
+</script>
+<!-- ============ OVERLAY SCROLLBAR (리스트 전용, 공간 미점유·자동 페이드) ============ -->
+<script>
+(function () {
+  const sc = document.querySelector(".table-scroll");
+  const card = document.querySelector(".table-card");
+  if (!sc || !card) return;
+
+  const PAD = 8;      // .table-card 패딩
+  const END = 4;      // 위/아래 여백
+  const MIN = 28;     // 최소 썸 높이
+  const thumb = document.createElement("div");
+  thumb.className = "oscroll";
+  card.appendChild(thumb);
+
+  let hideT, hovering = false, dragging = false, startY = 0, startTop = 0;
+
+  function scrollable() { return sc.scrollHeight - sc.clientHeight > 1; }
+
+  function layout() {
+    if (!scrollable()) { thumb.classList.remove("show"); return; }
+    const ch = sc.clientHeight, sh = sc.scrollHeight, st = sc.scrollTop;
+    const track = ch - END * 2;
+    const h = Math.max(MIN, track * ch / sh);
+    const top = PAD + END + (track - h) * (st / (sh - ch));
+    thumb.style.height = h + "px";
+    thumb.style.top = top + "px";
+  }
+
+  function flash() {
+    layout();
+    if (!scrollable()) return;
+    thumb.classList.add("show");
+    clearTimeout(hideT);
+    hideT = setTimeout(() => { if (!dragging && !hovering) thumb.classList.remove("show"); }, 900);
+  }
+
+  sc.addEventListener("scroll", flash, { passive: true });
+  sc.addEventListener("mouseenter", () => { hovering = true; flash(); });
+  sc.addEventListener("mouseleave", () => { hovering = false; if (!dragging) thumb.classList.remove("show"); });
+  window.addEventListener("resize", layout);
+
+  // 드래그
+  thumb.addEventListener("mousedown", (e) => {
+    dragging = true; startY = e.clientY; startTop = sc.scrollTop;
+    thumb.classList.add("drag"); document.body.style.userSelect = "none"; e.preventDefault();
+  });
+  window.addEventListener("mousemove", (e) => {
+    if (!dragging) return;
+    const ch = sc.clientHeight, sh = sc.scrollHeight;
+    const track = ch - END * 2, h = parseFloat(thumb.style.height) || MIN;
+    sc.scrollTop = startTop + (e.clientY - startY) * (sh - ch) / (track - h);
+  });
+  window.addEventListener("mouseup", () => {
+    if (!dragging) return;
+    dragging = false; thumb.classList.remove("drag"); document.body.style.userSelect = "";
+    if (!hovering) thumb.classList.remove("show");
+  });
+
+  // 필터/정렬로 행 수 바뀌면 재계산
+  const tb = document.querySelector("#tbody");
+  if (tb) new MutationObserver(layout).observe(tb, { childList: true });
+  layout();
+})();
+</script>
+<!-- ============ POINTER PARALLAX (index.html 참고) ============ -->
+<script>
+  if (!matchMedia('(prefers-reduced-motion: reduce)').matches) {
+    const root = document.documentElement;
+    addEventListener('pointermove', (e) => {
+      root.style.setProperty('--mx', (e.clientX / innerWidth - 0.5).toFixed(3));
+      root.style.setProperty('--my', (e.clientY / innerHeight - 0.5).toFixed(3));
+    }, { passive: true });
+  }
+</script>
+</body>
+</html>

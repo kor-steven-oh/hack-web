@@ -1,0 +1,518 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+<title>Hello AI Hackathon — 참가팀 운영 대시보드</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Manrope:wght@200;300;400;500;600;700;800&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
+<style>
+  /* ============ DESIGN TOKENS (samsung-tech-design) ============ */
+  :root {
+    --blue: #1428a0; --blue-bright: #1e4dd8; --blue-light: #e8eeff; --blue-50: #f5f7ff;
+    --ink: #000; --text: #111; --text-2: #4a4a4a; --text-3: #8e8e8e;
+    --bg: #fff; --bg-soft: #fafafa; --line: #e6e6e6; --line-2: #f0f0f0;
+    --green: #00a36c; --amber: #d97706; --red: #b91c1c;
+    --radius: 4px; --radius-lg: 12px;
+  }
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  html { scroll-behavior: smooth; }
+  body {
+    font-family: 'Manrope', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+    background: var(--bg); color: var(--text); line-height: 1.5;
+    -webkit-font-smoothing: antialiased; -moz-osx-font-smoothing: grayscale;
+    letter-spacing: -0.005em;
+  }
+  .container { max-width: 1320px; margin: 0 auto; padding: 0 40px; }
+  .mono { font-family: 'JetBrains Mono', monospace; }
+
+  /* ============ TOP NAV ============ */
+  .topnav {
+    position: sticky; top: 0; z-index: 50;
+    background: rgba(255,255,255,0.85);
+    backdrop-filter: saturate(180%) blur(20px);
+    -webkit-backdrop-filter: saturate(180%) blur(20px);
+    border-bottom: 1px solid var(--line);
+  }
+  .topnav-inner { display: flex; align-items: center; justify-content: space-between; height: 64px; }
+  .brand { display: flex; align-items: center; gap: 12px; font-weight: 700; font-size: 16px; letter-spacing: -0.02em; }
+  .brand-mark {
+    width: 28px; height: 28px; border-radius: 6px; background: var(--blue);
+    display: flex; align-items: center; justify-content: center;
+    color: #fff; font-weight: 800; font-size: 13px; letter-spacing: -0.04em;
+  }
+  .brand-text .accent { color: var(--blue); }
+  .topnav-cta { font-family: 'JetBrains Mono', monospace; font-size: 12px; color: var(--text-3); }
+
+  /* ============ PAGE HEAD ============ */
+  .pagehead { padding: 40px 0 28px; border-bottom: 1px solid var(--line); }
+  .eyebrow {
+    display: inline-flex; align-items: center; gap: 8px; padding: 6px 12px;
+    background: var(--blue-light); color: var(--blue); border-radius: 999px;
+    font-size: 12px; font-weight: 600; letter-spacing: 0.02em; margin-bottom: 20px;
+  }
+  .eyebrow .pulse { width: 6px; height: 6px; border-radius: 50%; background: var(--blue); animation: pulse 2s ease-in-out infinite; }
+  @keyframes pulse { 0%,100% { opacity: 1; transform: scale(1); } 50% { opacity: .6; transform: scale(1.2); } }
+  .pagehead h1 { font-size: clamp(28px, 4vw, 44px); font-weight: 700; letter-spacing: -0.04em; line-height: 1.02; margin-bottom: 12px; }
+  .pagehead h1 .blue { color: var(--blue); }
+  .pagehead p.lead { font-size: 16px; color: var(--text-2); max-width: 640px; }
+
+  /* ============ KPI BAR ============ */
+  .kpis {
+    display: grid; grid-template-columns: repeat(4, 1fr);
+    border-top: 1px solid var(--line); border-bottom: 1px solid var(--line); margin-top: 28px;
+  }
+  .kpi { padding: 22px 24px 22px 0; border-right: 1px solid var(--line); }
+  .kpi:last-child { border-right: none; }
+  .kpi-value { font-size: 34px; font-weight: 700; letter-spacing: -0.03em; line-height: 1; margin-bottom: 6px; }
+  .kpi-value .unit { font-size: 17px; font-weight: 500; color: var(--blue); margin-left: 2px; }
+  .kpi-label { font-size: 12px; color: var(--text-3); letter-spacing: .02em; text-transform: uppercase; font-weight: 600; }
+
+  /* ============ CONTROL BAR (sticky) ============ */
+  .controls-wrap {
+    border-bottom: 1px solid var(--line); position: sticky; top: 64px; z-index: 40;
+    background: rgba(255,255,255,0.92); backdrop-filter: blur(20px);
+  }
+  .controls { padding: 16px 0; display: flex; align-items: center; gap: 14px; flex-wrap: wrap; }
+  .search {
+    display: flex; align-items: center; gap: 8px; background: var(--bg);
+    border: 1px solid var(--line); border-radius: 999px; padding: 8px 16px; min-width: 240px;
+  }
+  .search:focus-within { border-color: var(--text); }
+  .search svg { width: 15px; height: 15px; color: var(--text-3); flex: none; }
+  .search input { border: none; outline: none; font-family: inherit; font-size: 14px; color: var(--text); width: 100%; background: transparent; }
+  .chip-group { display: flex; gap: 8px; flex-wrap: wrap; }
+  .chip {
+    background: var(--bg); border: 1px solid var(--line); padding: 8px 14px; border-radius: 999px;
+    font-family: inherit; font-size: 13px; font-weight: 500; color: var(--text-2);
+    cursor: pointer; transition: all .15s; display: inline-flex; align-items: center; gap: 6px;
+  }
+  .chip:hover { border-color: var(--text); color: var(--text); }
+  .chip.active { background: var(--text); border-color: var(--text); color: #fff; }
+  .chip .count { font-family: 'JetBrains Mono', monospace; font-size: 11px; opacity: .7; }
+  .spacer { flex: 1 1 auto; }
+  .select {
+    font-family: inherit; font-size: 13px; font-weight: 500; color: var(--text-2);
+    background: var(--bg); border: 1px solid var(--line); border-radius: 999px;
+    padding: 8px 32px 8px 14px; cursor: pointer; appearance: none;
+    background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='12' viewBox='0 0 24 24' fill='none' stroke='%238e8e8e' stroke-width='2.5' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpolyline points='6 9 12 15 18 9'/%3E%3C/svg%3E");
+    background-repeat: no-repeat; background-position: right 12px center;
+  }
+  .select:hover { border-color: var(--text); color: var(--text); }
+
+  /* ============ RESULT META ============ */
+  .resultmeta { padding: 18px 0 10px; font-size: 13px; color: var(--text-3); font-family: 'JetBrains Mono', monospace; }
+  .resultmeta b { color: var(--text); font-weight: 500; }
+
+  /* ============ TABLE ============ */
+  .table-section { padding: 0 0 80px; }
+  .table-scroll { overflow-x: auto; border: 1px solid var(--line); border-radius: var(--radius-lg); }
+  table { width: 100%; border-collapse: collapse; min-width: 980px; }
+  thead th {
+    text-align: left; font-size: 11px; font-weight: 700; text-transform: uppercase; letter-spacing: .05em;
+    color: var(--text-3); padding: 14px 16px; border-bottom: 1px solid var(--line);
+    background: var(--bg-soft); white-space: nowrap; position: sticky; top: 0;
+  }
+  thead th.sortable { cursor: pointer; user-select: none; }
+  thead th.sortable:hover { color: var(--text); }
+  th .arrow { display: inline-block; margin-left: 4px; font-size: 10px; color: var(--blue); opacity: 0; }
+  th.sorted .arrow { opacity: 1; }
+  tbody td { padding: 14px 16px; border-bottom: 1px solid var(--line-2); font-size: 14px; vertical-align: middle; }
+  tbody tr:last-child td { border-bottom: none; }
+  tbody tr { cursor: pointer; transition: background .12s; }
+  tbody tr:hover { background: var(--blue-50); }
+  .rownum { font-family: 'JetBrains Mono', monospace; font-size: 13px; color: var(--text-3); font-weight: 500; }
+  .t-id { font-family: 'JetBrains Mono', monospace; font-size: 11px; color: var(--text-3); margin-bottom: 2px; }
+  .t-name { font-weight: 700; letter-spacing: -0.01em; }
+  .t-sub { color: var(--text-2); }
+  .num { font-family: 'JetBrains Mono', monospace; font-size: 13px; color: var(--text); }
+  .muted { color: var(--text-3); }
+  .go { color: var(--blue); font-weight: 600; font-size: 13px; white-space: nowrap; }
+
+  /* ============ PILLS / BADGES ============ */
+  .pill {
+    display: inline-flex; align-items: center; gap: 6px; padding: 4px 10px; border-radius: 999px;
+    font-size: 12px; font-weight: 600; white-space: nowrap;
+  }
+  .pill .dot { width: 6px; height: 6px; border-radius: 50%; flex: none; }
+  .st-접수완료  { background: #f4f4f5; color: #52525b; } .st-접수완료 .dot { background: #a1a1aa; }
+  .st-선정중    { background: var(--blue-light); color: var(--blue); } .st-선정중 .dot { background: var(--blue); }
+  .st-미선정    { background: #fef3f2; color: var(--red); } .st-미선정 .dot { background: var(--red); }
+  .st-과제진행  { background: #f0f9ff; color: #0369a1; } .st-과제진행 .dot { background: #0369a1; }
+  .st-제출완료  { background: #ecfeff; color: #0e7490; } .st-제출완료 .dot { background: #0e7490; }
+  .st-본선심사  { background: #fff7ed; color: #c2410c; } .st-본선심사 .dot { background: #c2410c; }
+  .st-결선심사  { background: #f0fdf4; color: #15803d; } .st-결선심사 .dot { background: var(--green); animation: pulse 2s ease-in-out infinite; }
+
+  .award { display: inline-flex; align-items: center; padding: 3px 9px; border-radius: 999px;
+    background: var(--blue-light); color: var(--blue); font-size: 11px; font-weight: 700; letter-spacing: .01em; white-space: nowrap; }
+  .track-badge { display: inline-flex; padding: 3px 9px; border-radius: 999px; background: var(--bg-soft);
+    border: 1px solid var(--line); color: var(--text-2); font-size: 12px; font-weight: 500; white-space: nowrap; }
+  .yes { color: var(--green); font-weight: 700; } .no { color: var(--text-3); }
+
+  .empty { padding: 60px 20px; text-align: center; color: var(--text-3); }
+
+  /* ============ DETAIL PANEL ============ */
+  .overlay { position: fixed; inset: 0; background: rgba(17,17,17,0.35); opacity: 0; pointer-events: none; transition: opacity .2s; z-index: 60; }
+  .overlay.show { opacity: 1; pointer-events: auto; }
+  .panel {
+    position: fixed; top: 0; right: 0; height: 100%; width: 440px; max-width: 92vw;
+    background: var(--bg); border-left: 1px solid var(--line); z-index: 70;
+    transform: translateX(100%); transition: transform .26s cubic-bezier(.4,0,.2,1);
+    display: flex; flex-direction: column; box-shadow: -20px 0 60px rgba(0,0,0,0.08);
+  }
+  .panel.show { transform: translateX(0); }
+  .panel-head { padding: 24px 28px 20px; border-bottom: 1px solid var(--line); }
+  .panel-head .pid { font-family: 'JetBrains Mono', monospace; font-size: 12px; color: var(--text-3); margin-bottom: 6px; }
+  .panel-head h2 { font-size: 24px; font-weight: 700; letter-spacing: -0.03em; }
+  .panel-close {
+    position: absolute; top: 20px; right: 22px; width: 32px; height: 32px; border-radius: 8px;
+    border: 1px solid var(--line); background: var(--bg); cursor: pointer; color: var(--text-2);
+    display: flex; align-items: center; justify-content: center; transition: all .15s;
+  }
+  .panel-close:hover { border-color: var(--text); color: var(--text); }
+  .panel-body { padding: 22px 28px 40px; overflow-y: auto; }
+  .panel-tags { display: flex; flex-wrap: wrap; gap: 8px; margin-bottom: 24px; }
+  .kv-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 1px; background: var(--line); border: 1px solid var(--line); border-radius: var(--radius-lg); overflow: hidden; margin-bottom: 24px; }
+  .kv { background: var(--bg); padding: 14px 16px; }
+  .kv .k { font-size: 11px; text-transform: uppercase; letter-spacing: .04em; color: var(--text-3); font-weight: 600; margin-bottom: 5px; }
+  .kv .v { font-size: 15px; font-weight: 600; color: var(--text); }
+  .kv .v.mono { font-family: 'JetBrains Mono', monospace; font-size: 14px; }
+  .sec-title { font-size: 11px; text-transform: uppercase; letter-spacing: .05em; color: var(--text-3); font-weight: 700; margin: 0 0 10px; }
+  .proj-name { font-size: 16px; font-weight: 700; letter-spacing: -0.01em; margin-bottom: 6px; }
+  .proj-desc { font-size: 14px; color: var(--text-2); line-height: 1.6; margin-bottom: 24px; }
+  .member-list { display: flex; flex-direction: column; gap: 1px; background: var(--line); border: 1px solid var(--line); border-radius: var(--radius-lg); overflow: hidden; margin-bottom: 24px; }
+  .member-row { display: flex; align-items: center; justify-content: space-between; background: var(--bg); padding: 11px 15px; }
+  .member-row.lead { background: var(--blue-50); }
+  .member-row .m-name { font-size: 14px; font-weight: 600; color: var(--text); }
+  .member-row.lead .m-name { color: var(--blue); }
+  .member-row .m-role { font-size: 12px; color: var(--text-3); font-weight: 500; }
+  .member-row.lead .m-role { color: var(--blue); opacity: .8; }
+  .repo-link { display: inline-flex; align-items: center; gap: 6px; font-family: 'JetBrains Mono', monospace; font-size: 13px; color: var(--blue); text-decoration: none; word-break: break-all; }
+  .repo-link:hover { text-decoration: underline; }
+
+  /* ============ FOOTER ============ */
+  footer { border-top: 1px solid var(--line); background: var(--bg-soft); padding: 40px 0; }
+  .footer-bottom { display: flex; justify-content: space-between; font-size: 12px; color: var(--text-3); font-family: 'JetBrains Mono', monospace; flex-wrap: wrap; gap: 10px; }
+
+  /* ============ RESPONSIVE ============ */
+  @media (max-width: 760px) {
+    .container { padding: 0 20px; }
+    .kpis { grid-template-columns: repeat(2, 1fr); }
+    .kpi:nth-child(2) { border-right: none; }
+    .kpi:nth-child(1), .kpi:nth-child(2) { border-bottom: 1px solid var(--line); }
+    .controls-wrap { position: static; }
+    .search { min-width: 0; width: 100%; }
+    .spacer { display: none; }
+  }
+</style>
+</head>
+<body>
+
+<!-- ============ TOP NAV ============ -->
+<nav class="topnav">
+  <div class="container topnav-inner">
+    <div class="brand">
+      <div class="brand-mark">H</div>
+      <span class="brand-text">Hello AI <span class="accent">Hackathon</span></span>
+    </div>
+    <div class="topnav-cta">운영 대시보드 · 2026</div>
+  </div>
+</nav>
+
+<!-- ============ PAGE HEAD + KPI ============ -->
+<header class="pagehead">
+  <div class="container">
+    <div class="eyebrow"><span class="pulse"></span>참가팀 운영 현황</div>
+    <h1>전체 참가팀 <span class="blue">한눈에</span> 관리</h1>
+    <p class="lead">Hello AI Hackathon 참가팀의 진행 상태·제출 현황·심사 결과를 검색하고 정렬해 확인하세요.</p>
+    <div class="kpis" id="kpis"></div>
+  </div>
+</header>
+
+<!-- ============ CONTROL BAR ============ -->
+<section class="controls-wrap">
+  <div class="container">
+    <div class="controls">
+      <div class="search">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg>
+        <input id="search" type="text" placeholder="팀명 · 팀장 · 소속 · 프로젝트 검색" />
+      </div>
+      <div class="chip-group" id="statusChips"></div>
+      <div class="spacer"></div>
+      <select class="select" id="trackFilter"></select>
+      <select class="select" id="sortSelect">
+        <option value="id-asc">번호순</option>
+        <option value="name-asc">팀명 (가나다)</option>
+        <option value="members-desc">인원 많은순</option>
+        <option value="status-asc">진행 단계순</option>
+        <option value="score-desc">점수 높은순</option>
+        <option value="updated-desc">최근 업데이트순</option>
+      </select>
+    </div>
+  </div>
+</section>
+
+<!-- ============ TABLE ============ -->
+<main class="table-section">
+  <div class="container">
+    <div class="resultmeta" id="resultMeta"></div>
+    <div class="table-scroll">
+      <table>
+        <thead>
+          <tr>
+            <th style="text-align:right;width:52px">No.</th>
+            <th class="sortable" data-key="name">팀 <span class="arrow"></span></th>
+            <th class="sortable" data-key="org">소속 <span class="arrow"></span></th>
+            <th>팀장</th>
+            <th class="sortable" data-key="members" style="text-align:right">인원 <span class="arrow"></span></th>
+            <th class="sortable" data-key="track">트랙 <span class="arrow"></span></th>
+            <th class="sortable" data-key="status">진행상태 <span class="arrow"></span></th>
+            <th style="text-align:center">제출</th>
+            <th class="sortable" data-key="score" style="text-align:right">점수 <span class="arrow"></span></th>
+            <th>수상</th>
+            <th class="sortable" data-key="updated">업데이트 <span class="arrow"></span></th>
+            <th></th>
+          </tr>
+        </thead>
+        <tbody id="tbody"></tbody>
+      </table>
+    </div>
+  </div>
+</main>
+
+<!-- ============ FOOTER ============ -->
+<footer>
+  <div class="container">
+    <div class="footer-bottom">
+      <span>© 2026 Samsung Electronics System LSI · People Team</span>
+      <span id="lastUpdated"></span>
+    </div>
+  </div>
+</footer>
+
+<!-- ============ DETAIL PANEL ============ -->
+<div class="overlay" id="overlay"></div>
+<aside class="panel" id="panel">
+  <div class="panel-head">
+    <button class="panel-close" id="panelClose" aria-label="닫기">
+      <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
+    </button>
+    <div class="pid" id="pPid"></div>
+    <h2 id="pName"></h2>
+  </div>
+  <div class="panel-body" id="panelBody"></div>
+</aside>
+
+<!-- ============ DATA ============ -->
+<script src="teams.js"></script>
+<!-- ============ APP ============ -->
+<script>
+(function () {
+  const TEAMS = (window.AXC_TEAMS || []).slice();
+  const STATUS_ORDER = ["접수완료", "선정중", "미선정", "과제 진행", "제출완료", "본선 심사", "결선 심사"];
+
+  // ---- state ----
+  let activeStatus = "all";
+  let searchText = "";
+  let activeTrack = "all";
+  let sortKey = "id", sortDir = "asc";
+
+  const $ = (s) => document.querySelector(s);
+
+  // ---- KPI bar (전체 데이터 기준) ----
+  function renderKpis() {
+    const total = TEAMS.length;
+    const people = TEAMS.reduce((s, t) => s + t.members, 0);
+    const submitted = TEAMS.filter(t => t.submitted).length;
+    const rate = total ? Math.round((submitted / total) * 100) : 0;
+    const reviewing = TEAMS.filter(t => t.status === "본선 심사" || t.status === "결선 심사").length;
+    const kpis = [
+      { v: total, u: "", l: "전체 팀" },
+      { v: people, u: "명", l: "총 참가 인원" },
+      { v: rate, u: "%", l: "제출 완료율" },
+      { v: reviewing, u: "팀", l: "심사 진행중" },
+    ];
+    $("#kpis").innerHTML = kpis.map(k =>
+      `<div class="kpi"><div class="kpi-value">${k.v}${k.u ? `<span class="unit">${k.u}</span>` : ""}</div><div class="kpi-label">${k.l}</div></div>`
+    ).join("");
+  }
+
+  // ---- track filter options ----
+  function renderTrackOptions() {
+    const tracks = [...new Set(TEAMS.map(t => t.track))];
+    const sel = $("#trackFilter");
+    sel.innerHTML = `<option value="all">전체 트랙</option>` +
+      tracks.map(tr => `<option value="${tr}">${tr}</option>`).join("");
+  }
+
+  // ---- helpers ----
+  function baseFiltered() {
+    // 검색 + 트랙 (상태 칩 카운트 계산용)
+    return TEAMS.filter(t => {
+      if (activeTrack !== "all" && t.track !== activeTrack) return false;
+      if (searchText) {
+        const q = searchText.toLowerCase();
+        const hay = [t.name, t.leader, t.org, t.project, t.id, t.track, t.memberList.map(m => m.name).join(" ")].join(" ").toLowerCase();
+        if (!hay.includes(q)) return false;
+      }
+      return true;
+    });
+  }
+
+  function renderStatusChips() {
+    const base = baseFiltered();
+    const counts = {};
+    STATUS_ORDER.forEach(s => counts[s] = 0);
+    base.forEach(t => counts[t.status]++);
+    const chips = [{ key: "all", label: "전체", n: base.length }]
+      .concat(STATUS_ORDER.map(s => ({ key: s, label: s, n: counts[s] })));
+    $("#statusChips").innerHTML = chips.map(c =>
+      `<button class="chip${activeStatus === c.key ? " active" : ""}" data-status="${c.key}">${c.label} <span class="count">${c.n}</span></button>`
+    ).join("");
+    $("#statusChips").querySelectorAll(".chip").forEach(btn => {
+      btn.addEventListener("click", () => { activeStatus = btn.dataset.status; render(); });
+    });
+  }
+
+  function currentRows() {
+    let rows = baseFiltered();
+    if (activeStatus !== "all") rows = rows.filter(t => t.status === activeStatus);
+    // sort
+    const dir = sortDir === "asc" ? 1 : -1;
+    rows.sort((a, b) => {
+      let av, bv;
+      if (sortKey === "status") { av = STATUS_ORDER.indexOf(a.status); bv = STATUS_ORDER.indexOf(b.status); }
+      else if (sortKey === "score") { av = a.score == null ? -1 : a.score; bv = b.score == null ? -1 : b.score; }
+      else if (sortKey === "members") { av = a.members; bv = b.members; }
+      else { av = a[sortKey]; bv = b[sortKey]; }
+      if (typeof av === "string") return av.localeCompare(bv, "ko") * dir;
+      return (av - bv) * dir;
+    });
+    return rows;
+  }
+
+  const fmtDate = (iso) => iso.replaceAll("-", ".").slice(2); // 26.06.14
+
+  function renderTable() {
+    const rows = currentRows();
+    $("#resultMeta").innerHTML = `전체 <b>${TEAMS.length}</b>팀 중 <b>${rows.length}</b>팀 표시`;
+    const tb = $("#tbody");
+    if (!rows.length) {
+      tb.innerHTML = `<tr><td colspan="12"><div class="empty">조건에 맞는 팀이 없습니다.</div></td></tr>`;
+      return;
+    }
+    tb.innerHTML = rows.map((t, i) => `
+      <tr data-id="${t.id}">
+        <td style="text-align:right"><span class="rownum">${i + 1}</span></td>
+        <td><div class="t-id">${t.id}</div><div class="t-name">${t.name}</div></td>
+        <td class="t-sub">${t.org}</td>
+        <td class="t-sub">${t.leader}</td>
+        <td style="text-align:right"><span class="num">${t.members}</span></td>
+        <td><span class="track-badge">${t.track}</span></td>
+        <td><span class="pill st-${t.status.split(" ").join("")}"><span class="dot"></span>${t.status}</span></td>
+        <td style="text-align:center">${t.submitted ? '<span class="yes">✓</span>' : '<span class="no">–</span>'}</td>
+        <td style="text-align:right">${t.score == null ? '<span class="muted">–</span>' : `<span class="num">${t.score}</span>`}</td>
+        <td>${t.award ? `<span class="award">${t.award}</span>` : '<span class="muted">–</span>'}</td>
+        <td><span class="num muted">${fmtDate(t.updated)}</span></td>
+        <td><span class="go">상세 →</span></td>
+      </tr>`).join("");
+    tb.querySelectorAll("tr[data-id]").forEach(tr => {
+      tr.addEventListener("click", () => openPanel(tr.dataset.id));
+    });
+  }
+
+  function updateSortHeaders() {
+    document.querySelectorAll("thead th.sortable").forEach(th => {
+      const arrow = th.querySelector(".arrow");
+      if (th.dataset.key === sortKey) { th.classList.add("sorted"); arrow.textContent = sortDir === "asc" ? "▲" : "▼"; }
+      else { th.classList.remove("sorted"); arrow.textContent = ""; }
+    });
+  }
+
+  function syncSortSelect() {
+    $("#sortSelect").value = `${sortKey}-${sortDir}`;
+  }
+
+  function render() {
+    renderStatusChips();
+    renderTable();
+    updateSortHeaders();
+    syncSortSelect();
+  }
+
+  // ---- detail panel ----
+  function openPanel(id) {
+    const t = TEAMS.find(x => x.id === id);
+    if (!t) return;
+    $("#pPid").textContent = t.id;
+    $("#pName").textContent = t.name;
+    const tags = `
+      <span class="pill st-${t.status.split(" ").join("")}"><span class="dot"></span>${t.status}</span>
+      <span class="track-badge">${t.track}</span>
+      ${t.award ? `<span class="award">${t.award}</span>` : ""}`;
+    const kv = [
+      ["소속", t.org, false],
+      ["팀장", t.leader, false],
+      ["인원", `${t.members}명`, true],
+      ["제출 여부", t.submitted ? "제출 완료" : "미제출", false],
+      ["심사 점수", t.score == null ? "미확정" : `${t.score} 점`, true],
+      ["최근 업데이트", t.updated, true],
+    ].map(([k, v, mono]) => `<div class="kv"><div class="k">${k}</div><div class="v${mono ? " mono" : ""}">${v}</div></div>`).join("");
+    const members = t.memberList.map((m, i) =>
+      `<div class="member-row${i === 0 ? " lead" : ""}"><span class="m-name">${i === 0 ? "★ " : ""}${m.name}</span><span class="m-role">${m.role}</span></div>`).join("");
+    $("#panelBody").innerHTML = `
+      <div class="panel-tags">${tags}</div>
+      <div class="sec-title">팀 소개</div>
+      <div class="proj-desc" style="margin-bottom:24px">${t.intro}</div>
+      <div class="kv-grid">${kv}</div>
+      <div class="sec-title">프로젝트</div>
+      <div class="proj-name">${t.project}</div>
+      <div class="proj-desc">${t.desc}</div>
+      <div class="sec-title">팀원 명단 (${t.members}명)</div>
+      <div class="member-list">${members}</div>
+      <div class="sec-title">제출물</div>
+      <a class="repo-link" href="${t.repo}" target="_blank" rel="noopener">
+        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M18 13v6a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h6"/><polyline points="15 3 21 3 21 9"/><line x1="10" y1="14" x2="21" y2="3"/></svg>
+        ${t.repo}
+      </a>`;
+    $("#overlay").classList.add("show");
+    $("#panel").classList.add("show");
+  }
+  function closePanel() {
+    $("#overlay").classList.remove("show");
+    $("#panel").classList.remove("show");
+  }
+
+  // ---- events ----
+  $("#search").addEventListener("input", (e) => { searchText = e.target.value.trim(); render(); });
+  $("#trackFilter").addEventListener("change", (e) => { activeTrack = e.target.value; render(); });
+  $("#sortSelect").addEventListener("change", (e) => {
+    const [k, d] = e.target.value.split("-"); sortKey = k; sortDir = d; render();
+  });
+  document.querySelectorAll("thead th.sortable").forEach(th => {
+    th.addEventListener("click", () => {
+      const key = th.dataset.key;
+      if (sortKey === key) sortDir = sortDir === "asc" ? "desc" : "asc";
+      else { sortKey = key; sortDir = (key === "score" || key === "members" || key === "updated") ? "desc" : "asc"; }
+      render();
+    });
+  });
+  $("#panelClose").addEventListener("click", closePanel);
+  $("#overlay").addEventListener("click", closePanel);
+  document.addEventListener("keydown", (e) => { if (e.key === "Escape") closePanel(); });
+
+  // ---- init ----
+  if (!TEAMS.length) {
+    $("#tbody").innerHTML = `<tr><td colspan="12"><div class="empty">teams.js 데이터를 불러오지 못했습니다. dashboard.html 과 같은 폴더에 teams.js 를 두세요.</div></td></tr>`;
+  } else {
+    const latest = TEAMS.reduce((m, t) => t.updated > m ? t.updated : m, TEAMS[0].updated);
+    $("#lastUpdated").textContent = `Last updated: ${latest}`;
+    renderKpis();
+    renderTrackOptions();
+    render();
+  }
+})();
+</script>
+</body>
+</html>

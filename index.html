@@ -1,0 +1,302 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>HELLO AI — 하늘과 바다처럼 열린 인텔리전스</title>
+<meta name="description" content="깊은 바다처럼 유연한 인텔리전스. 무엇을 만들지, 오늘부터 함께 정해요.">
+<meta property="og:title" content="HELLO AI">
+<meta property="og:description" content="깊은 바다처럼 유연한 인텔리전스. 무엇을 만들지, 오늘부터 함께 정해요.">
+<meta property="og:type" content="website">
+<link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'%3E%3Crect width='100' height='100' rx='22' fill='%231A5FBF'/%3E%3Ctext x='50' y='50' font-family='sans-serif' font-size='52' font-weight='700' fill='white' text-anchor='middle' dominant-baseline='central'%3EAI%3C/text%3E%3C/svg%3E">
+<meta name="theme-color" content="#1A5FBF">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Unbounded:wght@400..800&display=swap" rel="stylesheet">
+<link href="https://cdn.jsdelivr.net/gh/orioncactus/pretendard/dist/web/static/pretendard.css" rel="stylesheet">
+<style>
+  /* typed, animatable custom properties */
+  @property --mx {
+    syntax: "<number>";
+    inherits: true;
+    initial-value: 0;
+  }
+  @property --my {
+    syntax: "<number>";
+    inherits: true;
+    initial-value: 0;
+  }
+
+  :root {
+    --sea-0: #FFFFFF;   /* base, white */
+    --sea-1: #DCEBFF;   /* mid, blue */
+    --sea-2: #A9CFFF;   /* crest, deeper sky */
+    --foam-a: #1A5FBF;  /* letter-flow, deep blue */
+    --foam-b: #4E97F0;  /* letter-flow, mid blue */
+    --text:  #0C2A52;
+    --text-soft: #3D648F;
+  }
+
+  * { margin: 0; box-sizing: border-box; }
+
+  html { scroll-behavior: smooth; }
+
+  body {
+    font-family: "Pretendard", system-ui, sans-serif;
+    color: var(--text);
+    background: var(--sea-0);
+  }
+
+  .hero {
+    position: relative;
+    min-height: 100svh;
+    overflow: hidden;
+    display: grid;
+    grid-template-columns: minmax(0, 1fr);   /* column can't exceed viewport → children wrap */
+    align-content: center;
+    padding: 0 8vw;
+  }
+
+  /* deep water: gradient position flows across a fixed angle */
+  .sea {
+    position: absolute;
+    inset: 0;
+    background: linear-gradient(115deg,
+      var(--sea-0) 0%,
+      var(--sea-1) 30%,
+      var(--sea-2) 50%,
+      var(--sea-1) 70%,
+      var(--sea-0) 100%);
+    background-size: 400% 400%;
+    animation: flow 22s ease-in-out infinite alternate;
+  }
+
+  /* pointer parallax layer — children keep their own transforms */
+  .waterscape {
+    position: absolute;
+    inset: 0;
+    pointer-events: none;
+    transform: translate(calc(var(--mx) * 3vmax), calc(var(--my) * 2vmax));
+    transition: transform .5s cubic-bezier(.2,.7,.3,1);
+  }
+
+  /* swells: pre-faded radial gradients on sine-like paths — no edges, only light */
+  .swell {
+    position: absolute;
+    border-radius: 50%;
+    will-change: transform;
+    animation-timing-function: ease-in-out;
+    animation-iteration-count: infinite;
+    animation-direction: alternate;
+  }
+  .s1 {
+    width: 90vmax; height: 70vmax;
+    bottom: -40vmax; left: -25vmax;
+    background: radial-gradient(ellipse at 50% 50%, rgba(40,115,215,.40), rgba(40,115,215,0) 62%);
+    animation-name: sway-a; animation-duration: 17s;
+  }
+  .s2 {
+    width: 80vmax; height: 60vmax;
+    bottom: -36vmax; right: -20vmax;
+    background: radial-gradient(ellipse at 50% 50%, rgba(20,80,175,.36), rgba(20,80,175,0) 60%);
+    animation-name: sway-b; animation-duration: 23s;
+  }
+  .s3 {
+    width: 70vmax; height: 50vmax;
+    bottom: -30vmax; left: 20vw;
+    background: radial-gradient(ellipse at 50% 50%, rgba(70,150,240,.44), rgba(70,150,240,0) 62%);
+    animation-name: sway-a; animation-duration: 12s; animation-delay: -6s;
+  }
+  .s4 {
+    width: 60vmax; height: 60vmax;
+    top: -28vmax; right: -16vmax;
+    background: radial-gradient(circle at 50% 50%, rgba(100,170,250,.36), rgba(100,170,250,0) 60%);
+    animation-name: sway-b; animation-duration: 28s;
+  }
+  .s5 {
+    width: 50vmax; height: 36vmax;
+    top: 30%; left: 30vw;
+    background: radial-gradient(ellipse at 50% 50%, rgba(40,115,215,.22), rgba(40,115,215,0) 58%);
+    animation-name: sway-b; animation-duration: 15s; animation-delay: -4s;
+  }
+
+  /* sine-like drift: sideways while bobbing, breathing scale */
+  @keyframes sway-a {
+    0%   { transform: translate(0, 0) scale(1); }
+    25%  { transform: translate(6vmax, -7vmax) scale(1.06); }
+    50%  { transform: translate(12vmax, 0) scale(1); }
+    75%  { transform: translate(18vmax, 7vmax) scale(.95); }
+    100% { transform: translate(24vmax, 0) scale(1.02); }
+  }
+  @keyframes sway-b {
+    0%   { transform: translate(0, 0) scale(1); }
+    25%  { transform: translate(-6vmax, 6vmax) scale(.95); }
+    50%  { transform: translate(-11vmax, 0) scale(1.05); }
+    75%  { transform: translate(-16vmax, -6vmax) scale(1); }
+    100% { transform: translate(-21vmax, 0) scale(1.03); }
+  }
+  @keyframes flow {
+    from { background-position: 0% 0%; }
+    to   { background-position: 100% 100%; }
+  }
+
+  /* bottom wave band: flat waves scrolling left → right, seamless */
+  .waves {
+    position: absolute;
+    left: 0; bottom: 0;
+    width: 100%;
+    height: 44vh;
+    pointer-events: none;
+    z-index: 1;
+    filter: blur(7px);           /* dissolve any crest edge into a soft gradient */
+  }
+  .wave {
+    position: absolute;
+    left: 0; bottom: -6vh;       /* extra bottom bleed so bob never exposes a gap */
+    width: 200%;                 /* two periods → translateX(-50%) is seamless */
+    height: 100%;
+    will-change: transform;
+    animation: roll linear infinite;
+  }
+  .wave svg {
+    width: 100%; height: 100%; display: block;
+    will-change: transform;
+    animation: bob ease-in-out infinite alternate;   /* 위아래 요동 (roll과 독립) */
+  }
+  .w1 { animation-duration: 19s; opacity: .5;  }
+  .w2 { animation-duration: 13s; opacity: .65; animation-direction: reverse; }
+  .w3 { animation-duration:  9s; opacity: .9;  }
+  .w1 svg { animation-duration:  7s; }
+  .w2 svg { animation-duration:  5s; animation-delay: -2s; }
+  .w3 svg { animation-duration: 3.5s; animation-delay: -1s; }
+
+  @keyframes roll {
+    from { transform: translateX(0); }
+    to   { transform: translateX(-50%); }
+  }
+  @keyframes bob {
+    from { transform: translateY(2vh); }
+    to   { transform: translateY(-2.5vh); }
+  }
+
+  /* content counter-drifts against the pointer for depth */
+  .hero-inner {
+    position: relative;
+    z-index: 2;
+    max-width: 100%;
+    transform: translate(calc(var(--mx) * -1.2vmax), calc(var(--my) * -0.8vmax));
+    transition: transform .5s cubic-bezier(.2,.7,.3,1);
+  }
+
+  h1 {
+    font-family: "Unbounded", sans-serif;
+    font-size: clamp(3.2rem, 14vw, 13rem);
+    line-height: 0.98;
+    letter-spacing: -0.01em;
+    font-weight: 500;
+    text-wrap: balance;
+    word-break: keep-all;
+  }
+  h1 .hello { display: block; }
+
+  /* signature: light moves through the letters like water */
+  h1 .ai {
+    display: block;
+    font-weight: 700;
+    background: linear-gradient(115deg,
+      var(--foam-a) 0%,
+      var(--foam-b) 35%,
+      var(--foam-a) 60%,
+      var(--foam-b) 100%);
+    background-size: 300% 300%;
+    -webkit-background-clip: text;
+    background-clip: text;
+    color: transparent;
+    animation: flow 14s ease-in-out infinite alternate;
+  }
+
+  .sub {
+    margin-top: 2.2rem;
+    max-width: min(28em, 100%);
+    font-size: clamp(1rem, 1.6vw, 1.2rem);
+    font-weight: 400;
+    color: var(--text-soft);
+    line-height: 1.7;
+    text-wrap: pretty;
+  }
+
+  /* orchestrated load: one stagger, then calm */
+  .hello, .sub {
+    animation: rise .8s cubic-bezier(.2,.7,.2,1) both;
+  }
+  .hello { animation-delay: 0s; }
+  .ai    { animation-name: rise, flow; animation-duration: .8s, 14s; animation-delay: .1s, 0s; animation-timing-function: cubic-bezier(.2,.7,.2,1), ease-in-out; animation-iteration-count: 1, infinite; animation-direction: normal, alternate; animation-fill-mode: both, none; }
+  .sub   { animation-delay: .22s; }
+
+  @keyframes rise {
+    from { opacity: 0; transform: translateY(1.2rem); }
+    to   { opacity: 1; transform: translateY(0); }
+  }
+
+  @media (prefers-reduced-motion: reduce) {
+    .sea, .swell, .wave, .wave svg, .hello, .ai, .sub { animation: none; }
+    .waterscape, .hero-inner { transform: none; transition: none; }
+  }
+</style>
+</head>
+<body>
+  <section class="hero">
+    <div class="sea" aria-hidden="true"></div>
+    <div class="waterscape" aria-hidden="true">
+      <div class="swell s1"></div>
+      <div class="swell s2"></div>
+      <div class="swell s3"></div>
+      <div class="swell s4"></div>
+      <div class="swell s5"></div>
+    </div>
+    <div class="waves" aria-hidden="true">
+      <div class="wave w1">
+        <svg viewBox="0 0 1440 200" preserveAspectRatio="none">
+          <defs><linearGradient id="g1" x1="0" y1="0" x2="0" y2="1">
+            <stop offset="0" stop-color="#9CC8FF" stop-opacity="0"/>
+            <stop offset="1" stop-color="#9CC8FF" stop-opacity=".7"/>
+          </linearGradient></defs>
+          <path fill="url(#g1)" d="M0,90 C120,40 240,40 360,90 C480,140 600,140 720,90 C840,40 960,40 1080,90 C1200,140 1320,140 1440,90 L1440,200 L0,200 Z"/>
+        </svg>
+      </div>
+      <div class="wave w2">
+        <svg viewBox="0 0 1440 200" preserveAspectRatio="none">
+          <defs><linearGradient id="g2" x1="0" y1="0" x2="0" y2="1">
+            <stop offset="0" stop-color="#5E9EEA" stop-opacity="0"/>
+            <stop offset="1" stop-color="#5E9EEA" stop-opacity=".78"/>
+          </linearGradient></defs>
+          <path fill="url(#g2)" d="M0,110 C120,60 240,60 360,110 C480,160 600,160 720,110 C840,60 960,60 1080,110 C1200,160 1320,160 1440,110 L1440,200 L0,200 Z"/>
+        </svg>
+      </div>
+      <div class="wave w3">
+        <svg viewBox="0 0 1440 200" preserveAspectRatio="none">
+          <defs><linearGradient id="g3" x1="0" y1="0" x2="0" y2="1">
+            <stop offset="0" stop-color="#2E72CE" stop-opacity="0"/>
+            <stop offset="1" stop-color="#2E72CE" stop-opacity=".85"/>
+          </linearGradient></defs>
+          <path fill="url(#g3)" d="M0,130 C120,85 240,85 360,130 C480,175 600,175 720,130 C840,85 960,85 1080,130 C1200,175 1320,175 1440,130 L1440,200 L0,200 Z"/>
+        </svg>
+      </div>
+    </div>
+    <div class="hero-inner">
+      <h1><span class="hello">HELLO</span><span class="ai">AI</span></h1>
+      <p class="sub">깊은 바다처럼 유연한 인텔리전스. 무엇을 만들지, 오늘부터 함께 정해요.</p>
+    </div>
+  </section>
+  <script>
+    // pointer parallax — water follows, letters counter-drift
+    if (!matchMedia('(prefers-reduced-motion: reduce)').matches) {
+      const root = document.documentElement;
+      addEventListener('pointermove', (e) => {
+        root.style.setProperty('--mx', (e.clientX / innerWidth - 0.5).toFixed(3));
+        root.style.setProperty('--my', (e.clientY / innerHeight - 0.5).toFixed(3));
+      }, { passive: true });
+    }
+  </script>
+</body>
+</html>

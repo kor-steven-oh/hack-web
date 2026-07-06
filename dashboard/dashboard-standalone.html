@@ -1,0 +1,2401 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+<title>Hello AI Hackathon — 참가팀 운영 대시보드</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Manrope:wght@200;300;400;500;600;700;800&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
+<style>
+  /* ============ DESIGN TOKENS (samsung-tech-design) ============ */
+  :root {
+    --blue: #1428a0; --blue-bright: #1e4dd8; --blue-light: #e8eeff; --blue-50: #f5f7ff;
+    --ink: #000; --text: #111; --text-2: #4a4a4a; --text-3: #8e8e8e;
+    --bg: #fff; --bg-soft: #fafafa; --line: #e6e6e6; --line-2: #f0f0f0;
+    --green: #00a36c; --amber: #d97706; --red: #b91c1c;
+    --radius: 4px; --radius-lg: 12px;
+  }
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  html { scroll-behavior: smooth; }
+  body {
+    font-family: 'Manrope', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+    background: var(--bg); color: var(--text); line-height: 1.5;
+    -webkit-font-smoothing: antialiased; -moz-osx-font-smoothing: grayscale;
+    letter-spacing: -0.005em;
+  }
+  .container { max-width: 1320px; margin: 0 auto; padding: 0 40px; }
+  .mono { font-family: 'JetBrains Mono', monospace; }
+
+  /* ============ TOP NAV ============ */
+  .topnav {
+    position: sticky; top: 0; z-index: 50;
+    background: rgba(255,255,255,0.85);
+    backdrop-filter: saturate(180%) blur(20px);
+    -webkit-backdrop-filter: saturate(180%) blur(20px);
+    border-bottom: 1px solid var(--line);
+  }
+  .topnav-inner { display: flex; align-items: center; justify-content: space-between; height: 64px; }
+  .brand { display: flex; align-items: center; gap: 12px; font-weight: 700; font-size: 16px; letter-spacing: -0.02em; }
+  .brand-mark {
+    width: 28px; height: 28px; border-radius: 6px; background: var(--blue);
+    display: flex; align-items: center; justify-content: center;
+    color: #fff; font-weight: 800; font-size: 13px; letter-spacing: -0.04em;
+  }
+  .brand-text .accent { color: var(--blue); }
+  .topnav-cta { font-family: 'JetBrains Mono', monospace; font-size: 12px; color: var(--text-3); }
+
+  /* ============ PAGE HEAD ============ */
+  .pagehead { padding: 40px 0 28px; border-bottom: 1px solid var(--line); }
+  .eyebrow {
+    display: inline-flex; align-items: center; gap: 8px; padding: 6px 12px;
+    background: var(--blue-light); color: var(--blue); border-radius: 999px;
+    font-size: 12px; font-weight: 600; letter-spacing: 0.02em; margin-bottom: 20px;
+  }
+  .eyebrow .pulse { width: 6px; height: 6px; border-radius: 50%; background: var(--blue); animation: pulse 2s ease-in-out infinite; }
+  @keyframes pulse { 0%,100% { opacity: 1; transform: scale(1); } 50% { opacity: .6; transform: scale(1.2); } }
+  .pagehead h1 { font-size: clamp(28px, 4vw, 44px); font-weight: 700; letter-spacing: -0.04em; line-height: 1.02; margin-bottom: 12px; }
+  .pagehead h1 .blue { color: var(--blue); }
+  .pagehead p.lead { font-size: 16px; color: var(--text-2); max-width: 640px; }
+
+  /* ============ KPI BAR ============ */
+  .kpis {
+    display: grid; grid-template-columns: repeat(4, 1fr);
+    border-top: 1px solid var(--line); border-bottom: 1px solid var(--line); margin-top: 28px;
+  }
+  .kpi { padding: 22px 24px 22px 0; border-right: 1px solid var(--line); }
+  .kpi:last-child { border-right: none; }
+  .kpi-value { font-size: 34px; font-weight: 700; letter-spacing: -0.03em; line-height: 1; margin-bottom: 6px; }
+  .kpi-value .unit { font-size: 17px; font-weight: 500; color: var(--blue); margin-left: 2px; }
+  .kpi-label { font-size: 12px; color: var(--text-3); letter-spacing: .02em; text-transform: uppercase; font-weight: 600; }
+
+  /* ============ CONTROL BAR (sticky) ============ */
+  .controls-wrap {
+    border-bottom: 1px solid var(--line); position: sticky; top: 64px; z-index: 40;
+    background: rgba(255,255,255,0.92); backdrop-filter: blur(20px);
+  }
+  .controls { padding: 16px 0; display: flex; align-items: center; gap: 14px; flex-wrap: wrap; }
+  .search {
+    display: flex; align-items: center; gap: 8px; background: var(--bg);
+    border: 1px solid var(--line); border-radius: 999px; padding: 8px 16px; min-width: 240px;
+  }
+  .search:focus-within { border-color: var(--text); }
+  .search svg { width: 15px; height: 15px; color: var(--text-3); flex: none; }
+  .search input { border: none; outline: none; font-family: inherit; font-size: 14px; color: var(--text); width: 100%; background: transparent; }
+  .chip-group { display: flex; gap: 8px; flex-wrap: wrap; }
+  .chip {
+    background: var(--bg); border: 1px solid var(--line); padding: 8px 14px; border-radius: 999px;
+    font-family: inherit; font-size: 13px; font-weight: 500; color: var(--text-2);
+    cursor: pointer; transition: all .15s; display: inline-flex; align-items: center; gap: 6px;
+  }
+  .chip:hover { border-color: var(--text); color: var(--text); }
+  .chip.active { background: var(--text); border-color: var(--text); color: #fff; }
+  .chip .count { font-family: 'JetBrains Mono', monospace; font-size: 11px; opacity: .7; }
+  .spacer { flex: 1 1 auto; }
+  .select {
+    font-family: inherit; font-size: 13px; font-weight: 500; color: var(--text-2);
+    background: var(--bg); border: 1px solid var(--line); border-radius: 999px;
+    padding: 8px 32px 8px 14px; cursor: pointer; appearance: none;
+    background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='12' viewBox='0 0 24 24' fill='none' stroke='%238e8e8e' stroke-width='2.5' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpolyline points='6 9 12 15 18 9'/%3E%3C/svg%3E");
+    background-repeat: no-repeat; background-position: right 12px center;
+  }
+  .select:hover { border-color: var(--text); color: var(--text); }
+
+  /* ============ RESULT META ============ */
+  .resultmeta { padding: 18px 0 10px; font-size: 13px; color: var(--text-3); font-family: 'JetBrains Mono', monospace; }
+  .resultmeta b { color: var(--text); font-weight: 500; }
+
+  /* ============ TABLE ============ */
+  .table-section { padding: 0 0 80px; }
+  .table-scroll { overflow-x: auto; border: 1px solid var(--line); border-radius: var(--radius-lg); }
+  table { width: 100%; border-collapse: collapse; min-width: 980px; }
+  thead th {
+    text-align: left; font-size: 11px; font-weight: 700; text-transform: uppercase; letter-spacing: .05em;
+    color: var(--text-3); padding: 14px 16px; border-bottom: 1px solid var(--line);
+    background: var(--bg-soft); white-space: nowrap; position: sticky; top: 0;
+  }
+  thead th.sortable { cursor: pointer; user-select: none; }
+  thead th.sortable:hover { color: var(--text); }
+  th .arrow { display: inline-block; margin-left: 4px; font-size: 10px; color: var(--blue); opacity: 0; }
+  th.sorted .arrow { opacity: 1; }
+  tbody td { padding: 14px 16px; border-bottom: 1px solid var(--line-2); font-size: 14px; vertical-align: middle; }
+  tbody tr:last-child td { border-bottom: none; }
+  tbody tr { cursor: pointer; transition: background .12s; }
+  tbody tr:hover { background: var(--blue-50); }
+  .rownum { font-family: 'JetBrains Mono', monospace; font-size: 13px; color: var(--text-3); font-weight: 500; }
+  .t-id { font-family: 'JetBrains Mono', monospace; font-size: 11px; color: var(--text-3); margin-bottom: 2px; }
+  .t-name { font-weight: 700; letter-spacing: -0.01em; }
+  .t-sub { color: var(--text-2); }
+  .num { font-family: 'JetBrains Mono', monospace; font-size: 13px; color: var(--text); }
+  .muted { color: var(--text-3); }
+  .go { color: var(--blue); font-weight: 600; font-size: 13px; white-space: nowrap; }
+
+  /* ============ PILLS / BADGES ============ */
+  .pill {
+    display: inline-flex; align-items: center; gap: 6px; padding: 4px 10px; border-radius: 999px;
+    font-size: 12px; font-weight: 600; white-space: nowrap;
+  }
+  .pill .dot { width: 6px; height: 6px; border-radius: 50%; flex: none; }
+  .st-접수완료  { background: #f4f4f5; color: #52525b; } .st-접수완료 .dot { background: #a1a1aa; }
+  .st-선정중    { background: var(--blue-light); color: var(--blue); } .st-선정중 .dot { background: var(--blue); }
+  .st-미선정    { background: #fef3f2; color: var(--red); } .st-미선정 .dot { background: var(--red); }
+  .st-과제진행  { background: #f0f9ff; color: #0369a1; } .st-과제진행 .dot { background: #0369a1; }
+  .st-제출완료  { background: #ecfeff; color: #0e7490; } .st-제출완료 .dot { background: #0e7490; }
+  .st-본선심사  { background: #fff7ed; color: #c2410c; } .st-본선심사 .dot { background: #c2410c; }
+  .st-결선심사  { background: #f0fdf4; color: #15803d; } .st-결선심사 .dot { background: var(--green); animation: pulse 2s ease-in-out infinite; }
+
+  .award { display: inline-flex; align-items: center; padding: 3px 9px; border-radius: 999px;
+    background: var(--blue-light); color: var(--blue); font-size: 11px; font-weight: 700; letter-spacing: .01em; white-space: nowrap; }
+  .track-badge { display: inline-flex; padding: 3px 9px; border-radius: 999px; background: var(--bg-soft);
+    border: 1px solid var(--line); color: var(--text-2); font-size: 12px; font-weight: 500; white-space: nowrap; }
+  .yes { color: var(--green); font-weight: 700; } .no { color: var(--text-3); }
+
+  .empty { padding: 60px 20px; text-align: center; color: var(--text-3); }
+
+  /* ============ DETAIL PANEL ============ */
+  .overlay { position: fixed; inset: 0; background: rgba(17,17,17,0.35); opacity: 0; pointer-events: none; transition: opacity .2s; z-index: 60; }
+  .overlay.show { opacity: 1; pointer-events: auto; }
+  .panel {
+    position: fixed; top: 0; right: 0; height: 100%; width: 440px; max-width: 92vw;
+    background: var(--bg); border-left: 1px solid var(--line); z-index: 70;
+    transform: translateX(100%); transition: transform .26s cubic-bezier(.4,0,.2,1);
+    display: flex; flex-direction: column; box-shadow: -20px 0 60px rgba(0,0,0,0.08);
+  }
+  .panel.show { transform: translateX(0); }
+  .panel-head { padding: 24px 28px 20px; border-bottom: 1px solid var(--line); }
+  .panel-head .pid { font-family: 'JetBrains Mono', monospace; font-size: 12px; color: var(--text-3); margin-bottom: 6px; }
+  .panel-head h2 { font-size: 24px; font-weight: 700; letter-spacing: -0.03em; }
+  .panel-close {
+    position: absolute; top: 20px; right: 22px; width: 32px; height: 32px; border-radius: 8px;
+    border: 1px solid var(--line); background: var(--bg); cursor: pointer; color: var(--text-2);
+    display: flex; align-items: center; justify-content: center; transition: all .15s;
+  }
+  .panel-close:hover { border-color: var(--text); color: var(--text); }
+  .panel-body { padding: 22px 28px 40px; overflow-y: auto; }
+  .panel-tags { display: flex; flex-wrap: wrap; gap: 8px; margin-bottom: 24px; }
+  .kv-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 1px; background: var(--line); border: 1px solid var(--line); border-radius: var(--radius-lg); overflow: hidden; margin-bottom: 24px; }
+  .kv { background: var(--bg); padding: 14px 16px; }
+  .kv .k { font-size: 11px; text-transform: uppercase; letter-spacing: .04em; color: var(--text-3); font-weight: 600; margin-bottom: 5px; }
+  .kv .v { font-size: 15px; font-weight: 600; color: var(--text); }
+  .kv .v.mono { font-family: 'JetBrains Mono', monospace; font-size: 14px; }
+  .sec-title { font-size: 11px; text-transform: uppercase; letter-spacing: .05em; color: var(--text-3); font-weight: 700; margin: 0 0 10px; }
+  .proj-name { font-size: 16px; font-weight: 700; letter-spacing: -0.01em; margin-bottom: 6px; }
+  .proj-desc { font-size: 14px; color: var(--text-2); line-height: 1.6; margin-bottom: 24px; }
+  .member-list { display: flex; flex-direction: column; gap: 1px; background: var(--line); border: 1px solid var(--line); border-radius: var(--radius-lg); overflow: hidden; margin-bottom: 24px; }
+  .member-row { display: flex; align-items: center; justify-content: space-between; background: var(--bg); padding: 11px 15px; }
+  .member-row.lead { background: var(--blue-50); }
+  .member-row .m-name { font-size: 14px; font-weight: 600; color: var(--text); }
+  .member-row.lead .m-name { color: var(--blue); }
+  .member-row .m-role { font-size: 12px; color: var(--text-3); font-weight: 500; }
+  .member-row.lead .m-role { color: var(--blue); opacity: .8; }
+  .repo-link { display: inline-flex; align-items: center; gap: 6px; font-family: 'JetBrains Mono', monospace; font-size: 13px; color: var(--blue); text-decoration: none; word-break: break-all; }
+  .repo-link:hover { text-decoration: underline; }
+
+  /* ============ FOOTER ============ */
+  footer { border-top: 1px solid var(--line); background: var(--bg-soft); padding: 40px 0; }
+  .footer-bottom { display: flex; justify-content: space-between; font-size: 12px; color: var(--text-3); font-family: 'JetBrains Mono', monospace; flex-wrap: wrap; gap: 10px; }
+
+  /* ============ RESPONSIVE ============ */
+  @media (max-width: 760px) {
+    .container { padding: 0 20px; }
+    .kpis { grid-template-columns: repeat(2, 1fr); }
+    .kpi:nth-child(2) { border-right: none; }
+    .kpi:nth-child(1), .kpi:nth-child(2) { border-bottom: 1px solid var(--line); }
+    .controls-wrap { position: static; }
+    .search { min-width: 0; width: 100%; }
+    .spacer { display: none; }
+  }
+</style>
+</head>
+<body>
+
+<!-- ============ TOP NAV ============ -->
+<nav class="topnav">
+  <div class="container topnav-inner">
+    <div class="brand">
+      <div class="brand-mark">H</div>
+      <span class="brand-text">Hello AI <span class="accent">Hackathon</span></span>
+    </div>
+    <div class="topnav-cta">운영 대시보드 · 2026</div>
+  </div>
+</nav>
+
+<!-- ============ PAGE HEAD + KPI ============ -->
+<header class="pagehead">
+  <div class="container">
+    <div class="eyebrow"><span class="pulse"></span>참가팀 운영 현황</div>
+    <h1>전체 참가팀 <span class="blue">한눈에</span> 관리</h1>
+    <p class="lead">Hello AI Hackathon 참가팀의 진행 상태·제출 현황·심사 결과를 검색하고 정렬해 확인하세요.</p>
+    <div class="kpis" id="kpis"></div>
+  </div>
+</header>
+
+<!-- ============ CONTROL BAR ============ -->
+<section class="controls-wrap">
+  <div class="container">
+    <div class="controls">
+      <div class="search">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg>
+        <input id="search" type="text" placeholder="팀명 · 팀장 · 소속 · 프로젝트 검색" />
+      </div>
+      <div class="chip-group" id="statusChips"></div>
+      <div class="spacer"></div>
+      <select class="select" id="trackFilter"></select>
+      <select class="select" id="sortSelect">
+        <option value="id-asc">번호순</option>
+        <option value="name-asc">팀명 (가나다)</option>
+        <option value="members-desc">인원 많은순</option>
+        <option value="status-asc">진행 단계순</option>
+        <option value="score-desc">점수 높은순</option>
+        <option value="updated-desc">최근 업데이트순</option>
+      </select>
+    </div>
+  </div>
+</section>
+
+<!-- ============ TABLE ============ -->
+<main class="table-section">
+  <div class="container">
+    <div class="resultmeta" id="resultMeta"></div>
+    <div class="table-scroll">
+      <table>
+        <thead>
+          <tr>
+            <th style="text-align:right;width:52px">No.</th>
+            <th class="sortable" data-key="name">팀 <span class="arrow"></span></th>
+            <th class="sortable" data-key="org">소속 <span class="arrow"></span></th>
+            <th>팀장</th>
+            <th class="sortable" data-key="members" style="text-align:right">인원 <span class="arrow"></span></th>
+            <th class="sortable" data-key="track">트랙 <span class="arrow"></span></th>
+            <th class="sortable" data-key="status">진행상태 <span class="arrow"></span></th>
+            <th style="text-align:center">제출</th>
+            <th class="sortable" data-key="score" style="text-align:right">점수 <span class="arrow"></span></th>
+            <th>수상</th>
+            <th class="sortable" data-key="updated">업데이트 <span class="arrow"></span></th>
+            <th></th>
+          </tr>
+        </thead>
+        <tbody id="tbody"></tbody>
+      </table>
+    </div>
+  </div>
+</main>
+
+<!-- ============ FOOTER ============ -->
+<footer>
+  <div class="container">
+    <div class="footer-bottom">
+      <span>© 2026 Samsung Electronics System LSI · People Team</span>
+      <span id="lastUpdated"></span>
+    </div>
+  </div>
+</footer>
+
+<!-- ============ DETAIL PANEL ============ -->
+<div class="overlay" id="overlay"></div>
+<aside class="panel" id="panel">
+  <div class="panel-head">
+    <button class="panel-close" id="panelClose" aria-label="닫기">
+      <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
+    </button>
+    <div class="pid" id="pPid"></div>
+    <h2 id="pName"></h2>
+  </div>
+  <div class="panel-body" id="panelBody"></div>
+</aside>
+
+<!-- ============ DATA ============ -->
+<script>
+// =============================================================
+//  Hello AI Hackathon — 참가팀 더미 데이터 (50팀)
+//  자동 생성(gen.py). 실제 운영 시 이 배열을 실제 데이터로 교체하세요.
+//  스키마: no, id(HAI-001), name, org, track, leader, members,
+//    memberList[{name,role}], intro, project, desc, status,
+//    submitted, score(0~100|null), award(등급|null), repo, updated
+//  진행상태: 접수완료 > 선정중 > 미선정 > 과제 진행 > 제출완료 > 본선 심사 > 결선 심사
+// =============================================================
+window.AXC_TEAMS = [
+  {
+    "no": 1,
+    "id": "HAI-001",
+    "name": "커밋 크루",
+    "org": "품질보증팀",
+    "track": "문서/지식",
+    "leader": "장예준",
+    "members": 4,
+    "memberList": [
+      {
+        "name": "장예준",
+        "role": "팀장"
+      },
+      {
+        "name": "류현우",
+        "role": "백엔드"
+      },
+      {
+        "name": "오서준",
+        "role": "디자인"
+      },
+      {
+        "name": "정윤서",
+        "role": "기획/PM"
+      }
+    ],
+    "intro": "품질보증팀 소속 실무자들이 모여 결성한 팀으로, 현업에서 겪은 문서/지식 과제를 직접 해결하고자 참가했습니다.",
+    "project": "설계 스펙 Q&A 봇",
+    "desc": "흩어진 사내 문서·스펙을 검색·요약·질의응답 형태로 연결해 지식 접근성을 높입니다.",
+    "status": "제출완료",
+    "submitted": true,
+    "score": null,
+    "award": null,
+    "repo": "https://git.internal/hai/hai-001",
+    "updated": "2026-06-24"
+  },
+  {
+    "no": 2,
+    "id": "HAI-002",
+    "name": "테크 데뷰터",
+    "org": "모뎀개발실",
+    "track": "설계 자동화",
+    "leader": "신성민",
+    "members": 4,
+    "memberList": [
+      {
+        "name": "신성민",
+        "role": "팀장"
+      },
+      {
+        "name": "안하윤",
+        "role": "디자인"
+      },
+      {
+        "name": "송동현",
+        "role": "프론트엔드"
+      },
+      {
+        "name": "김유진",
+        "role": "데이터/ML"
+      }
+    ],
+    "intro": "모뎀개발실 소속 실무자들이 모여 결성한 팀으로, 현업에서 겪은 설계 자동화 과제를 직접 해결하고자 참가했습니다.",
+    "project": "레이아웃 DRC 어시스턴트",
+    "desc": "반복적인 설계 검토·제약조건 작업을 LLM 에이전트로 자동화하여 설계 리드타임을 단축하는 것을 목표로 합니다.",
+    "status": "제출완료",
+    "submitted": true,
+    "score": null,
+    "award": null,
+    "repo": "https://git.internal/hai/hai-002",
+    "updated": "2026-06-26"
+  },
+  {
+    "no": 3,
+    "id": "HAI-003",
+    "name": "칩 위스퍼러",
+    "org": "상품기획실",
+    "track": "고객/영업",
+    "leader": "임은지",
+    "members": 3,
+    "memberList": [
+      {
+        "name": "임은지",
+        "role": "팀장"
+      },
+      {
+        "name": "안우진",
+        "role": "도메인 전문가"
+      },
+      {
+        "name": "강윤서",
+        "role": "디자인"
+      }
+    ],
+    "intro": "상품기획실의 데이터와 도메인 지식을 바탕으로 고객/영업 문제를 현실적으로 풀어내는 것을 목표로 합니다.",
+    "project": "경쟁사 스펙 비교 리포터",
+    "desc": "고객 문의 대응과 제안 활동을 AI로 보조해 응대 품질과 속도를 동시에 개선합니다.",
+    "status": "과제 진행",
+    "submitted": false,
+    "score": null,
+    "award": null,
+    "repo": "https://git.internal/hai/hai-003",
+    "updated": "2026-06-12"
+  },
+  {
+    "no": 4,
+    "id": "HAI-004",
+    "name": "실리콘 드리머스",
+    "org": "상품기획실",
+    "track": "검증/테스트",
+    "leader": "송우진",
+    "members": 4,
+    "memberList": [
+      {
+        "name": "송우진",
+        "role": "팀장"
+      },
+      {
+        "name": "최시윤",
+        "role": "기획/PM"
+      },
+      {
+        "name": "오예린",
+        "role": "디자인"
+      },
+      {
+        "name": "임서준",
+        "role": "프론트엔드"
+      }
+    ],
+    "intro": "상품기획실 소속 실무자들이 모여 결성한 팀으로, 현업에서 겪은 검증/테스트 과제를 직접 해결하고자 참가했습니다.",
+    "project": "테스트벤치 자동 생성기",
+    "desc": "검증 단계의 수작업 비중을 줄이고, 결함을 조기에 분류·재현하여 검증 사이클을 가속화합니다.",
+    "status": "미선정",
+    "submitted": false,
+    "score": 56,
+    "award": null,
+    "repo": "https://git.internal/hai/hai-004",
+    "updated": "2026-06-08"
+  },
+  {
+    "no": 5,
+    "id": "HAI-005",
+    "name": "실리콘 밸리",
+    "org": "품질보증팀",
+    "track": "고객/영업",
+    "leader": "송우진",
+    "members": 3,
+    "memberList": [
+      {
+        "name": "송우진",
+        "role": "팀장"
+      },
+      {
+        "name": "장윤서",
+        "role": "도메인 전문가"
+      },
+      {
+        "name": "전은지",
+        "role": "백엔드"
+      }
+    ],
+    "intro": "서로 다른 직군이 모인 크로스펑셔널 팀입니다. 고객/영업 영역의 비효율을 AI로 개선하는 데 집중합니다.",
+    "project": "영업 제안서 초안 생성기",
+    "desc": "고객 문의 대응과 제안 활동을 AI로 보조해 응대 품질과 속도를 동시에 개선합니다.",
+    "status": "선정중",
+    "submitted": false,
+    "score": null,
+    "award": null,
+    "repo": "https://git.internal/hai/hai-005",
+    "updated": "2026-06-05"
+  },
+  {
+    "no": 6,
+    "id": "HAI-006",
+    "name": "에이전트 어벤저스",
+    "org": "상품기획실",
+    "track": "문서/지식",
+    "leader": "안준서",
+    "members": 6,
+    "memberList": [
+      {
+        "name": "안준서",
+        "role": "팀장"
+      },
+      {
+        "name": "김채원",
+        "role": "데이터/ML"
+      },
+      {
+        "name": "송서준",
+        "role": "기획/PM"
+      },
+      {
+        "name": "류서준",
+        "role": "디자인"
+      },
+      {
+        "name": "김도윤",
+        "role": "도메인 전문가"
+      },
+      {
+        "name": "홍서연",
+        "role": "프론트엔드"
+      }
+    ],
+    "intro": "상품기획실 소속 실무자들이 모여 결성한 팀으로, 현업에서 겪은 문서/지식 과제를 직접 해결하고자 참가했습니다.",
+    "project": "회의록 자동 요약기",
+    "desc": "흩어진 사내 문서·스펙을 검색·요약·질의응답 형태로 연결해 지식 접근성을 높입니다.",
+    "status": "결선 심사",
+    "submitted": true,
+    "score": 88,
+    "award": "AI Inspiration",
+    "repo": "https://git.internal/hai/hai-006",
+    "updated": "2026-07-01"
+  },
+  {
+    "no": 7,
+    "id": "HAI-007",
+    "name": "히든 레이어",
+    "org": "경영지원실",
+    "track": "설계 자동화",
+    "leader": "장유진",
+    "members": 4,
+    "memberList": [
+      {
+        "name": "장유진",
+        "role": "팀장"
+      },
+      {
+        "name": "윤가은",
+        "role": "백엔드"
+      },
+      {
+        "name": "황가은",
+        "role": "디자인"
+      },
+      {
+        "name": "신시우",
+        "role": "데이터/ML"
+      }
+    ],
+    "intro": "경영지원실 소속 실무자들이 모여 결성한 팀으로, 현업에서 겪은 설계 자동화 과제를 직접 해결하고자 참가했습니다.",
+    "project": "IP 재사용 추천 엔진",
+    "desc": "반복적인 설계 검토·제약조건 작업을 LLM 에이전트로 자동화하여 설계 리드타임을 단축하는 것을 목표로 합니다.",
+    "status": "제출완료",
+    "submitted": true,
+    "score": null,
+    "award": null,
+    "repo": "https://git.internal/hai/hai-007",
+    "updated": "2026-06-21"
+  },
+  {
+    "no": 8,
+    "id": "HAI-008",
+    "name": "엣지 케이스",
+    "org": "S/W개발실",
+    "track": "수율/공정",
+    "leader": "권동현",
+    "members": 6,
+    "memberList": [
+      {
+        "name": "권동현",
+        "role": "팀장"
+      },
+      {
+        "name": "한가은",
+        "role": "데이터/ML"
+      },
+      {
+        "name": "최서준",
+        "role": "프론트엔드"
+      },
+      {
+        "name": "조시우",
+        "role": "기획/PM"
+      },
+      {
+        "name": "송준서",
+        "role": "도메인 전문가"
+      },
+      {
+        "name": "정은지",
+        "role": "백엔드"
+      }
+    ],
+    "intro": "AI 활용 경험이 있는 멤버들이 모여, 수율/공정 업무에 바로 적용 가능한 도구를 만드는 것을 지향합니다.",
+    "project": "공정 파라미터 최적화 코파일럿",
+    "desc": "공정·설비 데이터에서 이상 신호를 조기에 포착하고 근본원인 분석을 지원해 수율 손실을 최소화합니다.",
+    "status": "미선정",
+    "submitted": false,
+    "score": 60,
+    "award": null,
+    "repo": "https://git.internal/hai/hai-008",
+    "updated": "2026-06-09"
+  },
+  {
+    "no": 9,
+    "id": "HAI-009",
+    "name": "임베딩",
+    "org": "품질보증팀",
+    "track": "설계 자동화",
+    "leader": "이지원",
+    "members": 3,
+    "memberList": [
+      {
+        "name": "이지원",
+        "role": "팀장"
+      },
+      {
+        "name": "신다현",
+        "role": "프론트엔드"
+      },
+      {
+        "name": "황시우",
+        "role": "데이터/ML"
+      }
+    ],
+    "intro": "품질보증팀 소속 실무자들이 모여 결성한 팀으로, 현업에서 겪은 설계 자동화 과제를 직접 해결하고자 참가했습니다.",
+    "project": "SDC 제약조건 자동 생성기",
+    "desc": "반복적인 설계 검토·제약조건 작업을 LLM 에이전트로 자동화하여 설계 리드타임을 단축하는 것을 목표로 합니다.",
+    "status": "제출완료",
+    "submitted": true,
+    "score": null,
+    "award": null,
+    "repo": "https://git.internal/hai/hai-009",
+    "updated": "2026-06-24"
+  },
+  {
+    "no": 10,
+    "id": "HAI-010",
+    "name": "무어의 법칙",
+    "org": "SOC개발실",
+    "track": "문서/지식",
+    "leader": "장시윤",
+    "members": 6,
+    "memberList": [
+      {
+        "name": "장시윤",
+        "role": "팀장"
+      },
+      {
+        "name": "정시우",
+        "role": "백엔드"
+      },
+      {
+        "name": "임시우",
+        "role": "프론트엔드"
+      },
+      {
+        "name": "이채원",
+        "role": "도메인 전문가"
+      },
+      {
+        "name": "송서연",
+        "role": "디자인"
+      },
+      {
+        "name": "한서연",
+        "role": "데이터/ML"
+      }
+    ],
+    "intro": "AI 활용 경험이 있는 멤버들이 모여, 문서/지식 업무에 바로 적용 가능한 도구를 만드는 것을 지향합니다.",
+    "project": "사내 지식 검색 에이전트",
+    "desc": "흩어진 사내 문서·스펙을 검색·요약·질의응답 형태로 연결해 지식 접근성을 높입니다.",
+    "status": "과제 진행",
+    "submitted": false,
+    "score": null,
+    "award": null,
+    "repo": "https://git.internal/hai/hai-010",
+    "updated": "2026-06-11"
+  },
+  {
+    "no": 11,
+    "id": "HAI-011",
+    "name": "트랜지스터",
+    "org": "경영지원실",
+    "track": "설계 자동화",
+    "leader": "강도윤",
+    "members": 3,
+    "memberList": [
+      {
+        "name": "강도윤",
+        "role": "팀장"
+      },
+      {
+        "name": "류서준",
+        "role": "데이터/ML"
+      },
+      {
+        "name": "류성민",
+        "role": "디자인"
+      }
+    ],
+    "intro": "경영지원실 소속 실무자들이 모여 결성한 팀으로, 현업에서 겪은 설계 자동화 과제를 직접 해결하고자 참가했습니다.",
+    "project": "IP 재사용 추천 엔진",
+    "desc": "반복적인 설계 검토·제약조건 작업을 LLM 에이전트로 자동화하여 설계 리드타임을 단축하는 것을 목표로 합니다.",
+    "status": "제출완료",
+    "submitted": true,
+    "score": null,
+    "award": null,
+    "repo": "https://git.internal/hai/hai-011",
+    "updated": "2026-06-21"
+  },
+  {
+    "no": 12,
+    "id": "HAI-012",
+    "name": "반도체 요정들",
+    "org": "People팀",
+    "track": "고객/영업",
+    "leader": "장시우",
+    "members": 5,
+    "memberList": [
+      {
+        "name": "장시우",
+        "role": "팀장"
+      },
+      {
+        "name": "정유진",
+        "role": "백엔드"
+      },
+      {
+        "name": "홍지호",
+        "role": "도메인 전문가"
+      },
+      {
+        "name": "권지훈",
+        "role": "기획/PM"
+      },
+      {
+        "name": "박민준",
+        "role": "프론트엔드"
+      }
+    ],
+    "intro": "People팀 소속 실무자들이 모여 결성한 팀으로, 현업에서 겪은 고객/영업 과제를 직접 해결하고자 참가했습니다.",
+    "project": "고객 기술문의 응대 봇",
+    "desc": "고객 문의 대응과 제안 활동을 AI로 보조해 응대 품질과 속도를 동시에 개선합니다.",
+    "status": "과제 진행",
+    "submitted": false,
+    "score": null,
+    "award": null,
+    "repo": "https://git.internal/hai/hai-012",
+    "updated": "2026-06-18"
+  },
+  {
+    "no": 13,
+    "id": "HAI-013",
+    "name": "토큰 마스터",
+    "org": "DDI개발실",
+    "track": "업무 자동화",
+    "leader": "정시윤",
+    "members": 5,
+    "memberList": [
+      {
+        "name": "정시윤",
+        "role": "팀장"
+      },
+      {
+        "name": "강준서",
+        "role": "도메인 전문가"
+      },
+      {
+        "name": "송태현",
+        "role": "디자인"
+      },
+      {
+        "name": "임성민",
+        "role": "기획/PM"
+      },
+      {
+        "name": "홍윤서",
+        "role": "프론트엔드"
+      }
+    ],
+    "intro": "DDI개발실의 데이터와 도메인 지식을 바탕으로 업무 자동화 문제를 현실적으로 풀어내는 것을 목표로 합니다.",
+    "project": "실행품의서 자동 작성기",
+    "desc": "품의·보고·메일 등 반복 행정 업무를 자동화하여 실무자의 몰입 시간을 확보합니다.",
+    "status": "미선정",
+    "submitted": false,
+    "score": 55,
+    "award": null,
+    "repo": "https://git.internal/hai/hai-013",
+    "updated": "2026-06-12"
+  },
+  {
+    "no": 14,
+    "id": "HAI-014",
+    "name": "펨토초",
+    "org": "PMIC개발실",
+    "track": "검증/테스트",
+    "leader": "최소율",
+    "members": 3,
+    "memberList": [
+      {
+        "name": "최소율",
+        "role": "팀장"
+      },
+      {
+        "name": "한시우",
+        "role": "기획/PM"
+      },
+      {
+        "name": "홍동현",
+        "role": "백엔드"
+      }
+    ],
+    "intro": "AI 활용 경험이 있는 멤버들이 모여, 검증/테스트 업무에 바로 적용 가능한 도구를 만드는 것을 지향합니다.",
+    "project": "회귀 테스트 트리아지 봇",
+    "desc": "검증 단계의 수작업 비중을 줄이고, 결함을 조기에 분류·재현하여 검증 사이클을 가속화합니다.",
+    "status": "선정중",
+    "submitted": false,
+    "score": null,
+    "award": null,
+    "repo": "https://git.internal/hai/hai-014",
+    "updated": "2026-06-06"
+  },
+  {
+    "no": 15,
+    "id": "HAI-015",
+    "name": "체인 오브 소트",
+    "org": "CIS개발실",
+    "track": "설계 자동화",
+    "leader": "장서연",
+    "members": 6,
+    "memberList": [
+      {
+        "name": "장서연",
+        "role": "팀장"
+      },
+      {
+        "name": "강소율",
+        "role": "디자인"
+      },
+      {
+        "name": "권건우",
+        "role": "기획/PM"
+      },
+      {
+        "name": "신건우",
+        "role": "도메인 전문가"
+      },
+      {
+        "name": "김지우",
+        "role": "프론트엔드"
+      },
+      {
+        "name": "박예린",
+        "role": "데이터/ML"
+      }
+    ],
+    "intro": "CIS개발실 소속 실무자들이 모여 결성한 팀으로, 현업에서 겪은 설계 자동화 과제를 직접 해결하고자 참가했습니다.",
+    "project": "레이아웃 DRC 어시스턴트",
+    "desc": "반복적인 설계 검토·제약조건 작업을 LLM 에이전트로 자동화하여 설계 리드타임을 단축하는 것을 목표로 합니다.",
+    "status": "본선 심사",
+    "submitted": true,
+    "score": 89,
+    "award": null,
+    "repo": "https://git.internal/hai/hai-015",
+    "updated": "2026-06-27"
+  },
+  {
+    "no": 16,
+    "id": "HAI-016",
+    "name": "제로샷",
+    "org": "경영지원실",
+    "track": "업무 자동화",
+    "leader": "신예준",
+    "members": 4,
+    "memberList": [
+      {
+        "name": "신예준",
+        "role": "팀장"
+      },
+      {
+        "name": "조유진",
+        "role": "기획/PM"
+      },
+      {
+        "name": "윤유진",
+        "role": "프론트엔드"
+      },
+      {
+        "name": "최수빈",
+        "role": "디자인"
+      }
+    ],
+    "intro": "AI 활용 경험이 있는 멤버들이 모여, 업무 자동화 업무에 바로 적용 가능한 도구를 만드는 것을 지향합니다.",
+    "project": "주간보고 자동 집계",
+    "desc": "품의·보고·메일 등 반복 행정 업무를 자동화하여 실무자의 몰입 시간을 확보합니다.",
+    "status": "본선 심사",
+    "submitted": true,
+    "score": 90,
+    "award": null,
+    "repo": "https://git.internal/hai/hai-016",
+    "updated": "2026-06-30"
+  },
+  {
+    "no": 17,
+    "id": "HAI-017",
+    "name": "라스트 커밋",
+    "org": "모뎀개발실",
+    "track": "검증/테스트",
+    "leader": "신민준",
+    "members": 4,
+    "memberList": [
+      {
+        "name": "신민준",
+        "role": "팀장"
+      },
+      {
+        "name": "장하은",
+        "role": "디자인"
+      },
+      {
+        "name": "최현우",
+        "role": "백엔드"
+      },
+      {
+        "name": "이동현",
+        "role": "도메인 전문가"
+      }
+    ],
+    "intro": "서로 다른 직군이 모인 크로스펑셔널 팀입니다. 검증/테스트 영역의 비효율을 AI로 개선하는 데 집중합니다.",
+    "project": "웨이퍼 결함 분류 모델",
+    "desc": "검증 단계의 수작업 비중을 줄이고, 결함을 조기에 분류·재현하여 검증 사이클을 가속화합니다.",
+    "status": "미선정",
+    "submitted": false,
+    "score": 70,
+    "award": null,
+    "repo": "https://git.internal/hai/hai-017",
+    "updated": "2026-06-08"
+  },
+  {
+    "no": 18,
+    "id": "HAI-018",
+    "name": "패리티 비트",
+    "org": "PMIC개발실",
+    "track": "수율/공정",
+    "leader": "윤민준",
+    "members": 4,
+    "memberList": [
+      {
+        "name": "윤민준",
+        "role": "팀장"
+      },
+      {
+        "name": "박우진",
+        "role": "백엔드"
+      },
+      {
+        "name": "장수빈",
+        "role": "데이터/ML"
+      },
+      {
+        "name": "홍윤서",
+        "role": "도메인 전문가"
+      }
+    ],
+    "intro": "PMIC개발실의 데이터와 도메인 지식을 바탕으로 수율/공정 문제를 현실적으로 풀어내는 것을 목표로 합니다.",
+    "project": "수율 이상 조기탐지 대시보드",
+    "desc": "공정·설비 데이터에서 이상 신호를 조기에 포착하고 근본원인 분석을 지원해 수율 손실을 최소화합니다.",
+    "status": "제출완료",
+    "submitted": true,
+    "score": null,
+    "award": null,
+    "repo": "https://git.internal/hai/hai-018",
+    "updated": "2026-06-24"
+  },
+  {
+    "no": 19,
+    "id": "HAI-019",
+    "name": "빌드 브레이커즈",
+    "org": "PMIC개발실",
+    "track": "설계 자동화",
+    "leader": "류하윤",
+    "members": 4,
+    "memberList": [
+      {
+        "name": "류하윤",
+        "role": "팀장"
+      },
+      {
+        "name": "신성민",
+        "role": "도메인 전문가"
+      },
+      {
+        "name": "안지우",
+        "role": "데이터/ML"
+      },
+      {
+        "name": "서예린",
+        "role": "프론트엔드"
+      }
+    ],
+    "intro": "PMIC개발실의 데이터와 도메인 지식을 바탕으로 설계 자동화 문제를 현실적으로 풀어내는 것을 목표로 합니다.",
+    "project": "RTL 자동 리뷰 에이전트",
+    "desc": "반복적인 설계 검토·제약조건 작업을 LLM 에이전트로 자동화하여 설계 리드타임을 단축하는 것을 목표로 합니다.",
+    "status": "본선 심사",
+    "submitted": true,
+    "score": 87,
+    "award": null,
+    "repo": "https://git.internal/hai/hai-019",
+    "updated": "2026-06-27"
+  },
+  {
+    "no": 20,
+    "id": "HAI-020",
+    "name": "컨텍스트 윈도우",
+    "org": "S/W개발실",
+    "track": "고객/영업",
+    "leader": "안시윤",
+    "members": 3,
+    "memberList": [
+      {
+        "name": "안시윤",
+        "role": "팀장"
+      },
+      {
+        "name": "한성민",
+        "role": "기획/PM"
+      },
+      {
+        "name": "한유진",
+        "role": "백엔드"
+      }
+    ],
+    "intro": "S/W개발실의 데이터와 도메인 지식을 바탕으로 고객/영업 문제를 현실적으로 풀어내는 것을 목표로 합니다.",
+    "project": "영업 제안서 초안 생성기",
+    "desc": "고객 문의 대응과 제안 활동을 AI로 보조해 응대 품질과 속도를 동시에 개선합니다.",
+    "status": "접수완료",
+    "submitted": false,
+    "score": null,
+    "award": null,
+    "repo": "https://git.internal/hai/hai-020",
+    "updated": "2026-06-02"
+  },
+  {
+    "no": 21,
+    "id": "HAI-021",
+    "name": "야근 구조대",
+    "org": "S/W개발실",
+    "track": "고객/영업",
+    "leader": "서태현",
+    "members": 5,
+    "memberList": [
+      {
+        "name": "서태현",
+        "role": "팀장"
+      },
+      {
+        "name": "서유진",
+        "role": "디자인"
+      },
+      {
+        "name": "강성민",
+        "role": "기획/PM"
+      },
+      {
+        "name": "류지호",
+        "role": "백엔드"
+      },
+      {
+        "name": "서건우",
+        "role": "프론트엔드"
+      }
+    ],
+    "intro": "S/W개발실의 데이터와 도메인 지식을 바탕으로 고객/영업 문제를 현실적으로 풀어내는 것을 목표로 합니다.",
+    "project": "영업 제안서 초안 생성기",
+    "desc": "고객 문의 대응과 제안 활동을 AI로 보조해 응대 품질과 속도를 동시에 개선합니다.",
+    "status": "본선 심사",
+    "submitted": true,
+    "score": 91,
+    "award": null,
+    "repo": "https://git.internal/hai/hai-021",
+    "updated": "2026-06-26"
+  },
+  {
+    "no": 22,
+    "id": "HAI-022",
+    "name": "코드네임 나노",
+    "org": "S/W개발실",
+    "track": "검증/테스트",
+    "leader": "권준서",
+    "members": 5,
+    "memberList": [
+      {
+        "name": "권준서",
+        "role": "팀장"
+      },
+      {
+        "name": "박지호",
+        "role": "도메인 전문가"
+      },
+      {
+        "name": "안유진",
+        "role": "백엔드"
+      },
+      {
+        "name": "홍성민",
+        "role": "데이터/ML"
+      },
+      {
+        "name": "한도윤",
+        "role": "디자인"
+      }
+    ],
+    "intro": "S/W개발실의 데이터와 도메인 지식을 바탕으로 검증/테스트 문제를 현실적으로 풀어내는 것을 목표로 합니다.",
+    "project": "커버리지 갭 분석 에이전트",
+    "desc": "검증 단계의 수작업 비중을 줄이고, 결함을 조기에 분류·재현하여 검증 사이클을 가속화합니다.",
+    "status": "과제 진행",
+    "submitted": false,
+    "score": null,
+    "award": null,
+    "repo": "https://git.internal/hai/hai-022",
+    "updated": "2026-06-14"
+  },
+  {
+    "no": 23,
+    "id": "HAI-023",
+    "name": "머지 컨플릭트",
+    "org": "모뎀개발실",
+    "track": "검증/테스트",
+    "leader": "이서준",
+    "members": 3,
+    "memberList": [
+      {
+        "name": "이서준",
+        "role": "팀장"
+      },
+      {
+        "name": "홍채원",
+        "role": "디자인"
+      },
+      {
+        "name": "조태현",
+        "role": "데이터/ML"
+      }
+    ],
+    "intro": "AI 활용 경험이 있는 멤버들이 모여, 검증/테스트 업무에 바로 적용 가능한 도구를 만드는 것을 지향합니다.",
+    "project": "웨이퍼 결함 분류 모델",
+    "desc": "검증 단계의 수작업 비중을 줄이고, 결함을 조기에 분류·재현하여 검증 사이클을 가속화합니다.",
+    "status": "제출완료",
+    "submitted": true,
+    "score": null,
+    "award": null,
+    "repo": "https://git.internal/hai/hai-023",
+    "updated": "2026-06-26"
+  },
+  {
+    "no": 24,
+    "id": "HAI-024",
+    "name": "그래디언트",
+    "org": "DDI개발실",
+    "track": "문서/지식",
+    "leader": "홍태현",
+    "members": 4,
+    "memberList": [
+      {
+        "name": "홍태현",
+        "role": "팀장"
+      },
+      {
+        "name": "안준서",
+        "role": "프론트엔드"
+      },
+      {
+        "name": "이건우",
+        "role": "데이터/ML"
+      },
+      {
+        "name": "윤시윤",
+        "role": "도메인 전문가"
+      }
+    ],
+    "intro": "AI 활용 경험이 있는 멤버들이 모여, 문서/지식 업무에 바로 적용 가능한 도구를 만드는 것을 지향합니다.",
+    "project": "사내 지식 검색 에이전트",
+    "desc": "흩어진 사내 문서·스펙을 검색·요약·질의응답 형태로 연결해 지식 접근성을 높입니다.",
+    "status": "결선 심사",
+    "submitted": true,
+    "score": 98,
+    "award": "AI Ignition",
+    "repo": "https://git.internal/hai/hai-024",
+    "updated": "2026-07-01"
+  },
+  {
+    "no": 25,
+    "id": "HAI-025",
+    "name": "슈뢰딩거의 칩",
+    "org": "경영지원실",
+    "track": "문서/지식",
+    "leader": "권성민",
+    "members": 5,
+    "memberList": [
+      {
+        "name": "권성민",
+        "role": "팀장"
+      },
+      {
+        "name": "강소율",
+        "role": "백엔드"
+      },
+      {
+        "name": "황준서",
+        "role": "프론트엔드"
+      },
+      {
+        "name": "장우진",
+        "role": "데이터/ML"
+      },
+      {
+        "name": "윤민서",
+        "role": "기획/PM"
+      }
+    ],
+    "intro": "AI 활용 경험이 있는 멤버들이 모여, 문서/지식 업무에 바로 적용 가능한 도구를 만드는 것을 지향합니다.",
+    "project": "사내 지식 검색 에이전트",
+    "desc": "흩어진 사내 문서·스펙을 검색·요약·질의응답 형태로 연결해 지식 접근성을 높입니다.",
+    "status": "본선 심사",
+    "submitted": true,
+    "score": 88,
+    "award": null,
+    "repo": "https://git.internal/hai/hai-025",
+    "updated": "2026-06-28"
+  },
+  {
+    "no": 26,
+    "id": "HAI-026",
+    "name": "언더클럭",
+    "org": "품질보증팀",
+    "track": "수율/공정",
+    "leader": "임서준",
+    "members": 3,
+    "memberList": [
+      {
+        "name": "임서준",
+        "role": "팀장"
+      },
+      {
+        "name": "정예준",
+        "role": "프론트엔드"
+      },
+      {
+        "name": "윤현우",
+        "role": "백엔드"
+      }
+    ],
+    "intro": "서로 다른 직군이 모인 크로스펑셔널 팀입니다. 수율/공정 영역의 비효율을 AI로 개선하는 데 집중합니다.",
+    "project": "공정 파라미터 최적화 코파일럿",
+    "desc": "공정·설비 데이터에서 이상 신호를 조기에 포착하고 근본원인 분석을 지원해 수율 손실을 최소화합니다.",
+    "status": "제출완료",
+    "submitted": true,
+    "score": null,
+    "award": null,
+    "repo": "https://git.internal/hai/hai-026",
+    "updated": "2026-06-26"
+  },
+  {
+    "no": 27,
+    "id": "HAI-027",
+    "name": "오버클럭커",
+    "org": "S/W개발실",
+    "track": "설계 자동화",
+    "leader": "한건우",
+    "members": 6,
+    "memberList": [
+      {
+        "name": "한건우",
+        "role": "팀장"
+      },
+      {
+        "name": "서예린",
+        "role": "데이터/ML"
+      },
+      {
+        "name": "류태현",
+        "role": "프론트엔드"
+      },
+      {
+        "name": "김동현",
+        "role": "도메인 전문가"
+      },
+      {
+        "name": "류현우",
+        "role": "백엔드"
+      },
+      {
+        "name": "황민준",
+        "role": "디자인"
+      }
+    ],
+    "intro": "S/W개발실의 데이터와 도메인 지식을 바탕으로 설계 자동화 문제를 현실적으로 풀어내는 것을 목표로 합니다.",
+    "project": "IP 재사용 추천 엔진",
+    "desc": "반복적인 설계 검토·제약조건 작업을 LLM 에이전트로 자동화하여 설계 리드타임을 단축하는 것을 목표로 합니다.",
+    "status": "제출완료",
+    "submitted": true,
+    "score": null,
+    "award": null,
+    "repo": "https://git.internal/hai/hai-027",
+    "updated": "2026-06-23"
+  },
+  {
+    "no": 28,
+    "id": "HAI-028",
+    "name": "벡터 서치",
+    "org": "경영지원실",
+    "track": "문서/지식",
+    "leader": "황서준",
+    "members": 4,
+    "memberList": [
+      {
+        "name": "황서준",
+        "role": "팀장"
+      },
+      {
+        "name": "한유진",
+        "role": "디자인"
+      },
+      {
+        "name": "서소율",
+        "role": "프론트엔드"
+      },
+      {
+        "name": "강민서",
+        "role": "백엔드"
+      }
+    ],
+    "intro": "서로 다른 직군이 모인 크로스펑셔널 팀입니다. 문서/지식 영역의 비효율을 AI로 개선하는 데 집중합니다.",
+    "project": "설계 스펙 Q&A 봇",
+    "desc": "흩어진 사내 문서·스펙을 검색·요약·질의응답 형태로 연결해 지식 접근성을 높입니다.",
+    "status": "과제 진행",
+    "submitted": false,
+    "score": null,
+    "award": null,
+    "repo": "https://git.internal/hai/hai-028",
+    "updated": "2026-06-18"
+  },
+  {
+    "no": 29,
+    "id": "HAI-029",
+    "name": "어텐션 이즈 올",
+    "org": "People팀",
+    "track": "문서/지식",
+    "leader": "박지원",
+    "members": 3,
+    "memberList": [
+      {
+        "name": "박지원",
+        "role": "팀장"
+      },
+      {
+        "name": "장현우",
+        "role": "도메인 전문가"
+      },
+      {
+        "name": "한시우",
+        "role": "데이터/ML"
+      }
+    ],
+    "intro": "People팀의 데이터와 도메인 지식을 바탕으로 문서/지식 문제를 현실적으로 풀어내는 것을 목표로 합니다.",
+    "project": "회의록 자동 요약기",
+    "desc": "흩어진 사내 문서·스펙을 검색·요약·질의응답 형태로 연결해 지식 접근성을 높입니다.",
+    "status": "과제 진행",
+    "submitted": false,
+    "score": null,
+    "award": null,
+    "repo": "https://git.internal/hai/hai-029",
+    "updated": "2026-06-18"
+  },
+  {
+    "no": 30,
+    "id": "HAI-030",
+    "name": "프롬프트 연금술사",
+    "org": "PMIC개발실",
+    "track": "문서/지식",
+    "leader": "장민서",
+    "members": 6,
+    "memberList": [
+      {
+        "name": "장민서",
+        "role": "팀장"
+      },
+      {
+        "name": "오서준",
+        "role": "프론트엔드"
+      },
+      {
+        "name": "홍도윤",
+        "role": "도메인 전문가"
+      },
+      {
+        "name": "홍서연",
+        "role": "데이터/ML"
+      },
+      {
+        "name": "김서준",
+        "role": "디자인"
+      },
+      {
+        "name": "조민서",
+        "role": "기획/PM"
+      }
+    ],
+    "intro": "서로 다른 직군이 모인 크로스펑셔널 팀입니다. 문서/지식 영역의 비효율을 AI로 개선하는 데 집중합니다.",
+    "project": "사내 지식 검색 에이전트",
+    "desc": "흩어진 사내 문서·스펙을 검색·요약·질의응답 형태로 연결해 지식 접근성을 높입니다.",
+    "status": "본선 심사",
+    "submitted": true,
+    "score": 78,
+    "award": null,
+    "repo": "https://git.internal/hai/hai-030",
+    "updated": "2026-06-30"
+  },
+  {
+    "no": 31,
+    "id": "HAI-031",
+    "name": "타이밍 클로저",
+    "org": "품질보증팀",
+    "track": "검증/테스트",
+    "leader": "류시우",
+    "members": 3,
+    "memberList": [
+      {
+        "name": "류시우",
+        "role": "팀장"
+      },
+      {
+        "name": "강지호",
+        "role": "프론트엔드"
+      },
+      {
+        "name": "최채원",
+        "role": "디자인"
+      }
+    ],
+    "intro": "AI 활용 경험이 있는 멤버들이 모여, 검증/테스트 업무에 바로 적용 가능한 도구를 만드는 것을 지향합니다.",
+    "project": "웨이퍼 결함 분류 모델",
+    "desc": "검증 단계의 수작업 비중을 줄이고, 결함을 조기에 분류·재현하여 검증 사이클을 가속화합니다.",
+    "status": "결선 심사",
+    "submitted": true,
+    "score": 85,
+    "award": "AI Inspiration",
+    "repo": "https://git.internal/hai/hai-031",
+    "updated": "2026-07-03"
+  },
+  {
+    "no": 32,
+    "id": "HAI-032",
+    "name": "로직 락",
+    "org": "DDI개발실",
+    "track": "고객/영업",
+    "leader": "류태현",
+    "members": 3,
+    "memberList": [
+      {
+        "name": "류태현",
+        "role": "팀장"
+      },
+      {
+        "name": "전가은",
+        "role": "기획/PM"
+      },
+      {
+        "name": "최가은",
+        "role": "도메인 전문가"
+      }
+    ],
+    "intro": "DDI개발실의 데이터와 도메인 지식을 바탕으로 고객/영업 문제를 현실적으로 풀어내는 것을 목표로 합니다.",
+    "project": "VOC 감성분석 대시보드",
+    "desc": "고객 문의 대응과 제안 활동을 AI로 보조해 응대 품질과 속도를 동시에 개선합니다.",
+    "status": "본선 심사",
+    "submitted": true,
+    "score": 87,
+    "award": null,
+    "repo": "https://git.internal/hai/hai-032",
+    "updated": "2026-06-26"
+  },
+  {
+    "no": 33,
+    "id": "HAI-033",
+    "name": "리키지 헌터스",
+    "org": "상품기획실",
+    "track": "고객/영업",
+    "leader": "안지원",
+    "members": 3,
+    "memberList": [
+      {
+        "name": "안지원",
+        "role": "팀장"
+      },
+      {
+        "name": "신수빈",
+        "role": "디자인"
+      },
+      {
+        "name": "홍예린",
+        "role": "도메인 전문가"
+      }
+    ],
+    "intro": "서로 다른 직군이 모인 크로스펑셔널 팀입니다. 고객/영업 영역의 비효율을 AI로 개선하는 데 집중합니다.",
+    "project": "VOC 감성분석 대시보드",
+    "desc": "고객 문의 대응과 제안 활동을 AI로 보조해 응대 품질과 속도를 동시에 개선합니다.",
+    "status": "제출완료",
+    "submitted": true,
+    "score": null,
+    "award": null,
+    "repo": "https://git.internal/hai/hai-033",
+    "updated": "2026-06-24"
+  },
+  {
+    "no": 34,
+    "id": "HAI-034",
+    "name": "실리콘 마인드",
+    "org": "경영지원실",
+    "track": "검증/테스트",
+    "leader": "전가은",
+    "members": 5,
+    "memberList": [
+      {
+        "name": "전가은",
+        "role": "팀장"
+      },
+      {
+        "name": "한동현",
+        "role": "백엔드"
+      },
+      {
+        "name": "윤민서",
+        "role": "데이터/ML"
+      },
+      {
+        "name": "박하윤",
+        "role": "프론트엔드"
+      },
+      {
+        "name": "권서준",
+        "role": "디자인"
+      }
+    ],
+    "intro": "AI 활용 경험이 있는 멤버들이 모여, 검증/테스트 업무에 바로 적용 가능한 도구를 만드는 것을 지향합니다.",
+    "project": "회귀 테스트 트리아지 봇",
+    "desc": "검증 단계의 수작업 비중을 줄이고, 결함을 조기에 분류·재현하여 검증 사이클을 가속화합니다.",
+    "status": "결선 심사",
+    "submitted": true,
+    "score": 97,
+    "award": "AI Innovation",
+    "repo": "https://git.internal/hai/hai-034",
+    "updated": "2026-07-04"
+  },
+  {
+    "no": 35,
+    "id": "HAI-035",
+    "name": "게이트키퍼",
+    "org": "품질보증팀",
+    "track": "설계 자동화",
+    "leader": "강다현",
+    "members": 5,
+    "memberList": [
+      {
+        "name": "강다현",
+        "role": "팀장"
+      },
+      {
+        "name": "전태현",
+        "role": "백엔드"
+      },
+      {
+        "name": "장건우",
+        "role": "기획/PM"
+      },
+      {
+        "name": "김윤서",
+        "role": "디자인"
+      },
+      {
+        "name": "조도윤",
+        "role": "도메인 전문가"
+      }
+    ],
+    "intro": "AI 활용 경험이 있는 멤버들이 모여, 설계 자동화 업무에 바로 적용 가능한 도구를 만드는 것을 지향합니다.",
+    "project": "IP 재사용 추천 엔진",
+    "desc": "반복적인 설계 검토·제약조건 작업을 LLM 에이전트로 자동화하여 설계 리드타임을 단축하는 것을 목표로 합니다.",
+    "status": "미선정",
+    "submitted": false,
+    "score": 62,
+    "award": null,
+    "repo": "https://git.internal/hai/hai-035",
+    "updated": "2026-06-12"
+  },
+  {
+    "no": 36,
+    "id": "HAI-036",
+    "name": "스택 오버플로우",
+    "org": "DDI개발실",
+    "track": "업무 자동화",
+    "leader": "홍태현",
+    "members": 6,
+    "memberList": [
+      {
+        "name": "홍태현",
+        "role": "팀장"
+      },
+      {
+        "name": "윤현우",
+        "role": "데이터/ML"
+      },
+      {
+        "name": "윤지호",
+        "role": "프론트엔드"
+      },
+      {
+        "name": "류수빈",
+        "role": "도메인 전문가"
+      },
+      {
+        "name": "황건우",
+        "role": "백엔드"
+      },
+      {
+        "name": "안수빈",
+        "role": "디자인"
+      }
+    ],
+    "intro": "DDI개발실의 데이터와 도메인 지식을 바탕으로 업무 자동화 문제를 현실적으로 풀어내는 것을 목표로 합니다.",
+    "project": "메일 분류·초안 어시스턴트",
+    "desc": "품의·보고·메일 등 반복 행정 업무를 자동화하여 실무자의 몰입 시간을 확보합니다.",
+    "status": "결선 심사",
+    "submitted": true,
+    "score": 91,
+    "award": "AI Insight",
+    "repo": "https://git.internal/hai/hai-036",
+    "updated": "2026-07-06"
+  },
+  {
+    "no": 37,
+    "id": "HAI-037",
+    "name": "파인튜너스",
+    "org": "품질보증팀",
+    "track": "고객/영업",
+    "leader": "임하윤",
+    "members": 5,
+    "memberList": [
+      {
+        "name": "임하윤",
+        "role": "팀장"
+      },
+      {
+        "name": "송우진",
+        "role": "데이터/ML"
+      },
+      {
+        "name": "강시우",
+        "role": "도메인 전문가"
+      },
+      {
+        "name": "조소율",
+        "role": "기획/PM"
+      },
+      {
+        "name": "황하윤",
+        "role": "디자인"
+      }
+    ],
+    "intro": "품질보증팀의 데이터와 도메인 지식을 바탕으로 고객/영업 문제를 현실적으로 풀어내는 것을 목표로 합니다.",
+    "project": "고객 기술문의 응대 봇",
+    "desc": "고객 문의 대응과 제안 활동을 AI로 보조해 응대 품질과 속도를 동시에 개선합니다.",
+    "status": "결선 심사",
+    "submitted": true,
+    "score": 96,
+    "award": "AI Impact",
+    "repo": "https://git.internal/hai/hai-037",
+    "updated": "2026-07-05"
+  },
+  {
+    "no": 38,
+    "id": "HAI-038",
+    "name": "논블로킹",
+    "org": "PMIC개발실",
+    "track": "검증/테스트",
+    "leader": "오하은",
+    "members": 4,
+    "memberList": [
+      {
+        "name": "오하은",
+        "role": "팀장"
+      },
+      {
+        "name": "이건우",
+        "role": "디자인"
+      },
+      {
+        "name": "임태현",
+        "role": "도메인 전문가"
+      },
+      {
+        "name": "정지원",
+        "role": "기획/PM"
+      }
+    ],
+    "intro": "PMIC개발실 소속 실무자들이 모여 결성한 팀으로, 현업에서 겪은 검증/테스트 과제를 직접 해결하고자 참가했습니다.",
+    "project": "테스트벤치 자동 생성기",
+    "desc": "검증 단계의 수작업 비중을 줄이고, 결함을 조기에 분류·재현하여 검증 사이클을 가속화합니다.",
+    "status": "접수완료",
+    "submitted": false,
+    "score": null,
+    "award": null,
+    "repo": "https://git.internal/hai/hai-038",
+    "updated": "2026-06-05"
+  },
+  {
+    "no": 39,
+    "id": "HAI-039",
+    "name": "세그폴트",
+    "org": "PMIC개발실",
+    "track": "업무 자동화",
+    "leader": "황준서",
+    "members": 6,
+    "memberList": [
+      {
+        "name": "황준서",
+        "role": "팀장"
+      },
+      {
+        "name": "최민서",
+        "role": "기획/PM"
+      },
+      {
+        "name": "박현우",
+        "role": "디자인"
+      },
+      {
+        "name": "황도윤",
+        "role": "도메인 전문가"
+      },
+      {
+        "name": "류지원",
+        "role": "백엔드"
+      },
+      {
+        "name": "이예준",
+        "role": "프론트엔드"
+      }
+    ],
+    "intro": "PMIC개발실의 데이터와 도메인 지식을 바탕으로 업무 자동화 문제를 현실적으로 풀어내는 것을 목표로 합니다.",
+    "project": "실행품의서 자동 작성기",
+    "desc": "품의·보고·메일 등 반복 행정 업무를 자동화하여 실무자의 몰입 시간을 확보합니다.",
+    "status": "제출완료",
+    "submitted": true,
+    "score": null,
+    "award": null,
+    "repo": "https://git.internal/hai/hai-039",
+    "updated": "2026-06-22"
+  },
+  {
+    "no": 40,
+    "id": "HAI-040",
+    "name": "넷리스트",
+    "org": "CIS개발실",
+    "track": "검증/테스트",
+    "leader": "전성민",
+    "members": 6,
+    "memberList": [
+      {
+        "name": "전성민",
+        "role": "팀장"
+      },
+      {
+        "name": "임동현",
+        "role": "백엔드"
+      },
+      {
+        "name": "류은지",
+        "role": "데이터/ML"
+      },
+      {
+        "name": "임채원",
+        "role": "디자인"
+      },
+      {
+        "name": "전서연",
+        "role": "기획/PM"
+      },
+      {
+        "name": "전소율",
+        "role": "프론트엔드"
+      }
+    ],
+    "intro": "서로 다른 직군이 모인 크로스펑셔널 팀입니다. 검증/테스트 영역의 비효율을 AI로 개선하는 데 집중합니다.",
+    "project": "회귀 테스트 트리아지 봇",
+    "desc": "검증 단계의 수작업 비중을 줄이고, 결함을 조기에 분류·재현하여 검증 사이클을 가속화합니다.",
+    "status": "본선 심사",
+    "submitted": true,
+    "score": 79,
+    "award": null,
+    "repo": "https://git.internal/hai/hai-040",
+    "updated": "2026-06-27"
+  },
+  {
+    "no": 41,
+    "id": "HAI-041",
+    "name": "롤백 스쿼드",
+    "org": "CIS개발실",
+    "track": "고객/영업",
+    "leader": "윤하은",
+    "members": 4,
+    "memberList": [
+      {
+        "name": "윤하은",
+        "role": "팀장"
+      },
+      {
+        "name": "권태현",
+        "role": "데이터/ML"
+      },
+      {
+        "name": "전다현",
+        "role": "기획/PM"
+      },
+      {
+        "name": "임서연",
+        "role": "디자인"
+      }
+    ],
+    "intro": "CIS개발실의 데이터와 도메인 지식을 바탕으로 고객/영업 문제를 현실적으로 풀어내는 것을 목표로 합니다.",
+    "project": "영업 제안서 초안 생성기",
+    "desc": "고객 문의 대응과 제안 활동을 AI로 보조해 응대 품질과 속도를 동시에 개선합니다.",
+    "status": "선정중",
+    "submitted": false,
+    "score": null,
+    "award": null,
+    "repo": "https://git.internal/hai/hai-041",
+    "updated": "2026-06-05"
+  },
+  {
+    "no": 42,
+    "id": "HAI-042",
+    "name": "팹리스 파이터즈",
+    "org": "품질보증팀",
+    "track": "고객/영업",
+    "leader": "윤시윤",
+    "members": 3,
+    "memberList": [
+      {
+        "name": "윤시윤",
+        "role": "팀장"
+      },
+      {
+        "name": "송서준",
+        "role": "디자인"
+      },
+      {
+        "name": "홍예준",
+        "role": "백엔드"
+      }
+    ],
+    "intro": "서로 다른 직군이 모인 크로스펑셔널 팀입니다. 고객/영업 영역의 비효율을 AI로 개선하는 데 집중합니다.",
+    "project": "고객 기술문의 응대 봇",
+    "desc": "고객 문의 대응과 제안 활동을 AI로 보조해 응대 품질과 속도를 동시에 개선합니다.",
+    "status": "본선 심사",
+    "submitted": true,
+    "score": 92,
+    "award": null,
+    "repo": "https://git.internal/hai/hai-042",
+    "updated": "2026-06-28"
+  },
+  {
+    "no": 43,
+    "id": "HAI-043",
+    "name": "래치업",
+    "org": "모뎀개발실",
+    "track": "설계 자동화",
+    "leader": "전소율",
+    "members": 5,
+    "memberList": [
+      {
+        "name": "전소율",
+        "role": "팀장"
+      },
+      {
+        "name": "임태현",
+        "role": "디자인"
+      },
+      {
+        "name": "서하윤",
+        "role": "프론트엔드"
+      },
+      {
+        "name": "안건우",
+        "role": "백엔드"
+      },
+      {
+        "name": "황준서",
+        "role": "기획/PM"
+      }
+    ],
+    "intro": "모뎀개발실 소속 실무자들이 모여 결성한 팀으로, 현업에서 겪은 설계 자동화 과제를 직접 해결하고자 참가했습니다.",
+    "project": "IP 재사용 추천 엔진",
+    "desc": "반복적인 설계 검토·제약조건 작업을 LLM 에이전트로 자동화하여 설계 리드타임을 단축하는 것을 목표로 합니다.",
+    "status": "선정중",
+    "submitted": false,
+    "score": null,
+    "award": null,
+    "repo": "https://git.internal/hai/hai-043",
+    "updated": "2026-06-04"
+  },
+  {
+    "no": 44,
+    "id": "HAI-044",
+    "name": "커널 패닉",
+    "org": "상품기획실",
+    "track": "고객/영업",
+    "leader": "김도윤",
+    "members": 5,
+    "memberList": [
+      {
+        "name": "김도윤",
+        "role": "팀장"
+      },
+      {
+        "name": "류서연",
+        "role": "기획/PM"
+      },
+      {
+        "name": "강다현",
+        "role": "디자인"
+      },
+      {
+        "name": "안지원",
+        "role": "데이터/ML"
+      },
+      {
+        "name": "권시윤",
+        "role": "백엔드"
+      }
+    ],
+    "intro": "AI 활용 경험이 있는 멤버들이 모여, 고객/영업 업무에 바로 적용 가능한 도구를 만드는 것을 지향합니다.",
+    "project": "VOC 감성분석 대시보드",
+    "desc": "고객 문의 대응과 제안 활동을 AI로 보조해 응대 품질과 속도를 동시에 개선합니다.",
+    "status": "미선정",
+    "submitted": false,
+    "score": 63,
+    "award": null,
+    "repo": "https://git.internal/hai/hai-044",
+    "updated": "2026-06-08"
+  },
+  {
+    "no": 45,
+    "id": "HAI-045",
+    "name": "핫픽스",
+    "org": "품질보증팀",
+    "track": "설계 자동화",
+    "leader": "신지훈",
+    "members": 5,
+    "memberList": [
+      {
+        "name": "신지훈",
+        "role": "팀장"
+      },
+      {
+        "name": "황지호",
+        "role": "도메인 전문가"
+      },
+      {
+        "name": "서민서",
+        "role": "디자인"
+      },
+      {
+        "name": "송서연",
+        "role": "기획/PM"
+      },
+      {
+        "name": "권도윤",
+        "role": "프론트엔드"
+      }
+    ],
+    "intro": "품질보증팀의 데이터와 도메인 지식을 바탕으로 설계 자동화 문제를 현실적으로 풀어내는 것을 목표로 합니다.",
+    "project": "레이아웃 DRC 어시스턴트",
+    "desc": "반복적인 설계 검토·제약조건 작업을 LLM 에이전트로 자동화하여 설계 리드타임을 단축하는 것을 목표로 합니다.",
+    "status": "과제 진행",
+    "submitted": false,
+    "score": null,
+    "award": null,
+    "repo": "https://git.internal/hai/hai-045",
+    "updated": "2026-06-16"
+  },
+  {
+    "no": 46,
+    "id": "HAI-046",
+    "name": "웨이퍼 메이커",
+    "org": "S/W개발실",
+    "track": "설계 자동화",
+    "leader": "송준서",
+    "members": 3,
+    "memberList": [
+      {
+        "name": "송준서",
+        "role": "팀장"
+      },
+      {
+        "name": "전우진",
+        "role": "도메인 전문가"
+      },
+      {
+        "name": "황지원",
+        "role": "디자인"
+      }
+    ],
+    "intro": "S/W개발실 소속 실무자들이 모여 결성한 팀으로, 현업에서 겪은 설계 자동화 과제를 직접 해결하고자 참가했습니다.",
+    "project": "SDC 제약조건 자동 생성기",
+    "desc": "반복적인 설계 검토·제약조건 작업을 LLM 에이전트로 자동화하여 설계 리드타임을 단축하는 것을 목표로 합니다.",
+    "status": "과제 진행",
+    "submitted": false,
+    "score": null,
+    "award": null,
+    "repo": "https://git.internal/hai/hai-046",
+    "updated": "2026-06-18"
+  },
+  {
+    "no": 47,
+    "id": "HAI-047",
+    "name": "클럭 게이터",
+    "org": "경영지원실",
+    "track": "수율/공정",
+    "leader": "임준서",
+    "members": 4,
+    "memberList": [
+      {
+        "name": "임준서",
+        "role": "팀장"
+      },
+      {
+        "name": "강지호",
+        "role": "프론트엔드"
+      },
+      {
+        "name": "송민준",
+        "role": "데이터/ML"
+      },
+      {
+        "name": "송은지",
+        "role": "도메인 전문가"
+      }
+    ],
+    "intro": "서로 다른 직군이 모인 크로스펑셔널 팀입니다. 수율/공정 영역의 비효율을 AI로 개선하는 데 집중합니다.",
+    "project": "수율 이상 조기탐지 대시보드",
+    "desc": "공정·설비 데이터에서 이상 신호를 조기에 포착하고 근본원인 분석을 지원해 수율 손실을 최소화합니다.",
+    "status": "과제 진행",
+    "submitted": false,
+    "score": null,
+    "award": null,
+    "repo": "https://git.internal/hai/hai-047",
+    "updated": "2026-06-12"
+  },
+  {
+    "no": 48,
+    "id": "HAI-048",
+    "name": "리팩터링 길드",
+    "org": "CIS개발실",
+    "track": "문서/지식",
+    "leader": "황시윤",
+    "members": 4,
+    "memberList": [
+      {
+        "name": "황시윤",
+        "role": "팀장"
+      },
+      {
+        "name": "황서준",
+        "role": "백엔드"
+      },
+      {
+        "name": "권건우",
+        "role": "기획/PM"
+      },
+      {
+        "name": "정현우",
+        "role": "프론트엔드"
+      }
+    ],
+    "intro": "서로 다른 직군이 모인 크로스펑셔널 팀입니다. 문서/지식 영역의 비효율을 AI로 개선하는 데 집중합니다.",
+    "project": "설계 스펙 Q&A 봇",
+    "desc": "흩어진 사내 문서·스펙을 검색·요약·질의응답 형태로 연결해 지식 접근성을 높입니다.",
+    "status": "접수완료",
+    "submitted": false,
+    "score": null,
+    "award": null,
+    "repo": "https://git.internal/hai/hai-048",
+    "updated": "2026-06-03"
+  },
+  {
+    "no": 49,
+    "id": "HAI-049",
+    "name": "딥다이브",
+    "org": "S/W개발실",
+    "track": "수율/공정",
+    "leader": "안하윤",
+    "members": 5,
+    "memberList": [
+      {
+        "name": "안하윤",
+        "role": "팀장"
+      },
+      {
+        "name": "정준서",
+        "role": "디자인"
+      },
+      {
+        "name": "송다현",
+        "role": "프론트엔드"
+      },
+      {
+        "name": "오지훈",
+        "role": "기획/PM"
+      },
+      {
+        "name": "송우진",
+        "role": "도메인 전문가"
+      }
+    ],
+    "intro": "AI 활용 경험이 있는 멤버들이 모여, 수율/공정 업무에 바로 적용 가능한 도구를 만드는 것을 지향합니다.",
+    "project": "설비 로그 이상탐지",
+    "desc": "공정·설비 데이터에서 이상 신호를 조기에 포착하고 근본원인 분석을 지원해 수율 손실을 최소화합니다.",
+    "status": "미선정",
+    "submitted": false,
+    "score": 72,
+    "award": null,
+    "repo": "https://git.internal/hai/hai-049",
+    "updated": "2026-06-10"
+  },
+  {
+    "no": 50,
+    "id": "HAI-050",
+    "name": "AX 파이오니어",
+    "org": "DDI개발실",
+    "track": "검증/테스트",
+    "leader": "윤동현",
+    "members": 6,
+    "memberList": [
+      {
+        "name": "윤동현",
+        "role": "팀장"
+      },
+      {
+        "name": "서현우",
+        "role": "도메인 전문가"
+      },
+      {
+        "name": "홍예준",
+        "role": "프론트엔드"
+      },
+      {
+        "name": "황서연",
+        "role": "디자인"
+      },
+      {
+        "name": "정윤서",
+        "role": "데이터/ML"
+      },
+      {
+        "name": "류지훈",
+        "role": "백엔드"
+      }
+    ],
+    "intro": "AI 활용 경험이 있는 멤버들이 모여, 검증/테스트 업무에 바로 적용 가능한 도구를 만드는 것을 지향합니다.",
+    "project": "테스트벤치 자동 생성기",
+    "desc": "검증 단계의 수작업 비중을 줄이고, 결함을 조기에 분류·재현하여 검증 사이클을 가속화합니다.",
+    "status": "본선 심사",
+    "submitted": true,
+    "score": 91,
+    "award": null,
+    "repo": "https://git.internal/hai/hai-050",
+    "updated": "2026-06-26"
+  }
+];
+</script>
+<!-- ============ APP ============ -->
+<script>
+(function () {
+  const TEAMS = (window.AXC_TEAMS || []).slice();
+  const STATUS_ORDER = ["접수완료", "선정중", "미선정", "과제 진행", "제출완료", "본선 심사", "결선 심사"];
+
+  // ---- state ----
+  let activeStatus = "all";
+  let searchText = "";
+  let activeTrack = "all";
+  let sortKey = "id", sortDir = "asc";
+
+  const $ = (s) => document.querySelector(s);
+
+  // ---- KPI bar (전체 데이터 기준) ----
+  function renderKpis() {
+    const total = TEAMS.length;
+    const people = TEAMS.reduce((s, t) => s + t.members, 0);
+    const submitted = TEAMS.filter(t => t.submitted).length;
+    const rate = total ? Math.round((submitted / total) * 100) : 0;
+    const reviewing = TEAMS.filter(t => t.status === "본선 심사" || t.status === "결선 심사").length;
+    const kpis = [
+      { v: total, u: "", l: "전체 팀" },
+      { v: people, u: "명", l: "총 참가 인원" },
+      { v: rate, u: "%", l: "제출 완료율" },
+      { v: reviewing, u: "팀", l: "심사 진행중" },
+    ];
+    $("#kpis").innerHTML = kpis.map(k =>
+      `<div class="kpi"><div class="kpi-value">${k.v}${k.u ? `<span class="unit">${k.u}</span>` : ""}</div><div class="kpi-label">${k.l}</div></div>`
+    ).join("");
+  }
+
+  // ---- track filter options ----
+  function renderTrackOptions() {
+    const tracks = [...new Set(TEAMS.map(t => t.track))];
+    const sel = $("#trackFilter");
+    sel.innerHTML = `<option value="all">전체 트랙</option>` +
+      tracks.map(tr => `<option value="${tr}">${tr}</option>`).join("");
+  }
+
+  // ---- helpers ----
+  function baseFiltered() {
+    // 검색 + 트랙 (상태 칩 카운트 계산용)
+    return TEAMS.filter(t => {
+      if (activeTrack !== "all" && t.track !== activeTrack) return false;
+      if (searchText) {
+        const q = searchText.toLowerCase();
+        const hay = [t.name, t.leader, t.org, t.project, t.id, t.track, t.memberList.map(m => m.name).join(" ")].join(" ").toLowerCase();
+        if (!hay.includes(q)) return false;
+      }
+      return true;
+    });
+  }
+
+  function renderStatusChips() {
+    const base = baseFiltered();
+    const counts = {};
+    STATUS_ORDER.forEach(s => counts[s] = 0);
+    base.forEach(t => counts[t.status]++);
+    const chips = [{ key: "all", label: "전체", n: base.length }]
+      .concat(STATUS_ORDER.map(s => ({ key: s, label: s, n: counts[s] })));
+    $("#statusChips").innerHTML = chips.map(c =>
+      `<button class="chip${activeStatus === c.key ? " active" : ""}" data-status="${c.key}">${c.label} <span class="count">${c.n}</span></button>`
+    ).join("");
+    $("#statusChips").querySelectorAll(".chip").forEach(btn => {
+      btn.addEventListener("click", () => { activeStatus = btn.dataset.status; render(); });
+    });
+  }
+
+  function currentRows() {
+    let rows = baseFiltered();
+    if (activeStatus !== "all") rows = rows.filter(t => t.status === activeStatus);
+    // sort
+    const dir = sortDir === "asc" ? 1 : -1;
+    rows.sort((a, b) => {
+      let av, bv;
+      if (sortKey === "status") { av = STATUS_ORDER.indexOf(a.status); bv = STATUS_ORDER.indexOf(b.status); }
+      else if (sortKey === "score") { av = a.score == null ? -1 : a.score; bv = b.score == null ? -1 : b.score; }
+      else if (sortKey === "members") { av = a.members; bv = b.members; }
+      else { av = a[sortKey]; bv = b[sortKey]; }
+      if (typeof av === "string") return av.localeCompare(bv, "ko") * dir;
+      return (av - bv) * dir;
+    });
+    return rows;
+  }
+
+  const fmtDate = (iso) => iso.replaceAll("-", ".").slice(2); // 26.06.14
+
+  function renderTable() {
+    const rows = currentRows();
+    $("#resultMeta").innerHTML = `전체 <b>${TEAMS.length}</b>팀 중 <b>${rows.length}</b>팀 표시`;
+    const tb = $("#tbody");
+    if (!rows.length) {
+      tb.innerHTML = `<tr><td colspan="12"><div class="empty">조건에 맞는 팀이 없습니다.</div></td></tr>`;
+      return;
+    }
+    tb.innerHTML = rows.map((t, i) => `
+      <tr data-id="${t.id}">
+        <td style="text-align:right"><span class="rownum">${i + 1}</span></td>
+        <td><div class="t-id">${t.id}</div><div class="t-name">${t.name}</div></td>
+        <td class="t-sub">${t.org}</td>
+        <td class="t-sub">${t.leader}</td>
+        <td style="text-align:right"><span class="num">${t.members}</span></td>
+        <td><span class="track-badge">${t.track}</span></td>
+        <td><span class="pill st-${t.status.split(" ").join("")}"><span class="dot"></span>${t.status}</span></td>
+        <td style="text-align:center">${t.submitted ? '<span class="yes">✓</span>' : '<span class="no">–</span>'}</td>
+        <td style="text-align:right">${t.score == null ? '<span class="muted">–</span>' : `<span class="num">${t.score}</span>`}</td>
+        <td>${t.award ? `<span class="award">${t.award}</span>` : '<span class="muted">–</span>'}</td>
+        <td><span class="num muted">${fmtDate(t.updated)}</span></td>
+        <td><span class="go">상세 →</span></td>
+      </tr>`).join("");
+    tb.querySelectorAll("tr[data-id]").forEach(tr => {
+      tr.addEventListener("click", () => openPanel(tr.dataset.id));
+    });
+  }
+
+  function updateSortHeaders() {
+    document.querySelectorAll("thead th.sortable").forEach(th => {
+      const arrow = th.querySelector(".arrow");
+      if (th.dataset.key === sortKey) { th.classList.add("sorted"); arrow.textContent = sortDir === "asc" ? "▲" : "▼"; }
+      else { th.classList.remove("sorted"); arrow.textContent = ""; }
+    });
+  }
+
+  function syncSortSelect() {
+    $("#sortSelect").value = `${sortKey}-${sortDir}`;
+  }
+
+  function render() {
+    renderStatusChips();
+    renderTable();
+    updateSortHeaders();
+    syncSortSelect();
+  }
+
+  // ---- detail panel ----
+  function openPanel(id) {
+    const t = TEAMS.find(x => x.id === id);
+    if (!t) return;
+    $("#pPid").textContent = t.id;
+    $("#pName").textContent = t.name;
+    const tags = `
+      <span class="pill st-${t.status.split(" ").join("")}"><span class="dot"></span>${t.status}</span>
+      <span class="track-badge">${t.track}</span>
+      ${t.award ? `<span class="award">${t.award}</span>` : ""}`;
+    const kv = [
+      ["소속", t.org, false],
+      ["팀장", t.leader, false],
+      ["인원", `${t.members}명`, true],
+      ["제출 여부", t.submitted ? "제출 완료" : "미제출", false],
+      ["심사 점수", t.score == null ? "미확정" : `${t.score} 점`, true],
+      ["최근 업데이트", t.updated, true],
+    ].map(([k, v, mono]) => `<div class="kv"><div class="k">${k}</div><div class="v${mono ? " mono" : ""}">${v}</div></div>`).join("");
+    const members = t.memberList.map((m, i) =>
+      `<div class="member-row${i === 0 ? " lead" : ""}"><span class="m-name">${i === 0 ? "★ " : ""}${m.name}</span><span class="m-role">${m.role}</span></div>`).join("");
+    $("#panelBody").innerHTML = `
+      <div class="panel-tags">${tags}</div>
+      <div class="sec-title">팀 소개</div>
+      <div class="proj-desc" style="margin-bottom:24px">${t.intro}</div>
+      <div class="kv-grid">${kv}</div>
+      <div class="sec-title">프로젝트</div>
+      <div class="proj-name">${t.project}</div>
+      <div class="proj-desc">${t.desc}</div>
+      <div class="sec-title">팀원 명단 (${t.members}명)</div>
+      <div class="member-list">${members}</div>
+      <div class="sec-title">제출물</div>
+      <a class="repo-link" href="${t.repo}" target="_blank" rel="noopener">
+        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M18 13v6a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h6"/><polyline points="15 3 21 3 21 9"/><line x1="10" y1="14" x2="21" y2="3"/></svg>
+        ${t.repo}
+      </a>`;
+    $("#overlay").classList.add("show");
+    $("#panel").classList.add("show");
+  }
+  function closePanel() {
+    $("#overlay").classList.remove("show");
+    $("#panel").classList.remove("show");
+  }
+
+  // ---- events ----
+  $("#search").addEventListener("input", (e) => { searchText = e.target.value.trim(); render(); });
+  $("#trackFilter").addEventListener("change", (e) => { activeTrack = e.target.value; render(); });
+  $("#sortSelect").addEventListener("change", (e) => {
+    const [k, d] = e.target.value.split("-"); sortKey = k; sortDir = d; render();
+  });
+  document.querySelectorAll("thead th.sortable").forEach(th => {
+    th.addEventListener("click", () => {
+      const key = th.dataset.key;
+      if (sortKey === key) sortDir = sortDir === "asc" ? "desc" : "asc";
+      else { sortKey = key; sortDir = (key === "score" || key === "members" || key === "updated") ? "desc" : "asc"; }
+      render();
+    });
+  });
+  $("#panelClose").addEventListener("click", closePanel);
+  $("#overlay").addEventListener("click", closePanel);
+  document.addEventListener("keydown", (e) => { if (e.key === "Escape") closePanel(); });
+
+  // ---- init ----
+  if (!TEAMS.length) {
+    $("#tbody").innerHTML = `<tr><td colspan="12"><div class="empty">teams.js 데이터를 불러오지 못했습니다. dashboard.html 과 같은 폴더에 teams.js 를 두세요.</div></td></tr>`;
+  } else {
+    const latest = TEAMS.reduce((m, t) => t.updated > m ? t.updated : m, TEAMS[0].updated);
+    $("#lastUpdated").textContent = `Last updated: ${latest}`;
+    renderKpis();
+    renderTrackOptions();
+    render();
+  }
+})();
+</script>
+</body>
+</html>
